@@ -328,16 +328,13 @@ export function ReaderPage(): JSX.Element {
         </div>
       </main>
 
-      <footer className="flex items-center justify-start border-t border-black/10 px-4 py-2 text-xs opacity-50">
+      <footer className="flex items-center justify-center gap-4 border-t border-black/10 px-4 py-2 text-xs opacity-50">
         <span className="tabular-nums">
           {currentPage + 1} / {displayTotal}
           {isBackgroundPaginating && ' …'}
         </span>
-        <span className="mx-4 h-3 w-px shrink-0 bg-current opacity-30" aria-hidden="true" />
-        <div className="flex gap-4">
-          <span>点击左侧上一页 · 右侧下一页</span>
-          <span>← → 方向键翻页</span>
-        </div>
+        <span className="h-3 w-px shrink-0 bg-current opacity-30" aria-hidden="true" />
+        <span>← → 方向键翻页</span>
       </footer>
 
       {selection && (
