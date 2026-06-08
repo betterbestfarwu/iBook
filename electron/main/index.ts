@@ -1,10 +1,12 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerBookHandlers } from './ipc/books'
 import { registerFileHandlers } from './ipc/files'
 import { registerAnnotationHandlers } from './ipc/annotations'
 import { registerSettingsHandlers } from './ipc/settings'
+
+const iconPath = join(__dirname, '../../build/icon.png')
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -14,19 +16,22 @@ function createWindow(): void {
     minHeight: 600,
     show: false,
     title: 'iBook',
+    icon: iconPath,
     ...(process.platform === 'darwin'
       ? {
-          titleBarStyle: 'hiddenInset',
+          titleBarStyle: 'hidden',
           trafficLightPosition: { x: 16, y: 18 }
         }
-      : {
-          titleBarStyle: 'hidden',
-          titleBarOverlay: {
-            color: '#fafaf9',
-            symbolColor: '#44403c',
-            height: 48
+      : process.platform === 'win32'
+        ? {
+            titleBarStyle: 'hidden',
+            titleBarOverlay: {
+              color: '#fafaf9',
+              symbolColor: '#44403c',
+              height: 48
+            }
           }
-        }),
+        : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -36,6 +41,9 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
+    if (process.platform === 'darwin') {
+      mainWindow.setWindowButtonVisibility(true)
+    }
     mainWindow.show()
   })
 
@@ -57,6 +65,10 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.ibook.reader')
+
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(nativeImage.createFromPath(iconPath))
+  }
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

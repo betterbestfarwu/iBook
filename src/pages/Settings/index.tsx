@@ -1,8 +1,29 @@
+import { useEffect, useState } from 'react'
 import { useSettingsStore } from '../../stores'
 import { THEME_ORDER, THEME_PRESETS } from '../../types'
 
 export function SettingsPage(): JSX.Element {
   const { settings, updateSettings } = useSettingsStore()
+  const [bgThumbUrl, setBgThumbUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!settings.backgroundImage) {
+      setBgThumbUrl(null)
+      return
+    }
+    let cancelled = false
+    void window.electronAPI.files
+      .readImageThumbnail(settings.backgroundImage)
+      .then((url) => {
+        if (!cancelled) setBgThumbUrl(url)
+      })
+      .catch(() => {
+        if (!cancelled) setBgThumbUrl(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [settings.backgroundImage])
 
   const handleBgImage = async () => {
     const path = await window.electronAPI.openImage()
@@ -70,7 +91,7 @@ export function SettingsPage(): JSX.Element {
                   onChange={(e) => updateSettings({ backgroundColor: e.target.value, backgroundImage: '' })}
                 />
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col items-start gap-2">
                 <button
                   type="button"
                   onClick={handleBgImage}
@@ -80,7 +101,17 @@ export function SettingsPage(): JSX.Element {
                 </button>
                 {settings.backgroundImage && (
                   <>
-                    <span className="truncate text-xs text-stone-400">{settings.backgroundImage.split(/[/\\]/).pop()}</span>
+                    {bgThumbUrl ? (
+                      <img
+                        src={bgThumbUrl}
+                        alt="背景图预览"
+                        className="h-20 w-32 rounded-lg border border-stone-200 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-20 w-32 items-center justify-center rounded-lg border border-stone-200 bg-stone-100 text-xs text-stone-400">
+                        加载中…
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={() => updateSettings({ backgroundImage: '' })}

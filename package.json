@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "dist": "npm run build && CSC_NAME=\"${SIGN_IDENTITY:-Sand Studio (S7VFHSY63S)}\" electron-builder --mac dmg",
     "preview": "electron-vite preview",
     "postinstall": "electron-builder install-app-deps"
   },
@@ -26,7 +27,7 @@
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
-    "electron": "^33.2.0",
+    "electron": "26.6.10",
     "electron-builder": "^25.1.8",
     "electron-vite": "^2.3.0",
     "postcss": "^8.4.49",

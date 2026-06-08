@@ -35,8 +35,15 @@ function resolveChapterPatterns(text: string): RegExp[] {
   return textHasHashChapters(text) ? [HASH_CHAPTER_PATTERN] : FALLBACK_PATTERNS
 }
 
+/** 常见 TXT 站点水印：正文(www.xxx.com) 第九二二章 … */
+const SITE_BODY_PREFIX = /^\s*正文\s*[\(（][^)）]*[\)）]\s*/
+
+function stripSitePrefix(line: string): string {
+  return line.replace(SITE_BODY_PREFIX, '').trim()
+}
+
 function normalizeTitle(line: string): string {
-  const trimmed = line.trim()
+  const trimmed = stripSitePrefix(line.trim())
   const hash = trimmed.match(/^#{3}\s*(.+?)\s*#{3}$/)
   if (hash) return hash[1].trim()
   return trimmed
@@ -46,10 +53,15 @@ export function detectChapterTitle(line: string, patterns?: RegExp[]): string | 
   const trimmed = line.trim()
   if (!trimmed || trimmed.length > MAX_TITLE_LEN) return null
 
+  const stripped = stripSitePrefix(trimmed)
+  const candidates = stripped !== trimmed ? [stripped, trimmed] : [trimmed]
   const rules = patterns ?? [HASH_CHAPTER_PATTERN, ...FALLBACK_PATTERNS]
-  for (const pattern of rules) {
-    if (pattern.test(line)) {
-      return normalizeTitle(line)
+
+  for (const candidate of candidates) {
+    for (const pattern of rules) {
+      if (pattern.test(candidate)) {
+        return normalizeTitle(candidate)
+      }
     }
   }
   return null

@@ -1,13 +1,17 @@
 {
   "appId": "com.ibook.reader",
   "productName": "iBook",
+  "icon": "build/icon.png",
   "directories": {
-    "output": "dist"
+    "output": "dist",
+    "buildResources": "build"
   },
   "files": ["out/**/*"],
   "mac": {
     "target": ["dmg"],
-    "category": "public.app-category.productivity"
+    "category": "public.app-category.productivity",
+    "minimumSystemVersion": "10.14.0",
+    "identity": "Sand Studio (S7VFHSY63S)"
   },
   "win": {
     "target": ["nsis"]

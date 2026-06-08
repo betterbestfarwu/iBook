@@ -21,6 +21,7 @@ export interface ElectronAPI {
   }
   files: {
     readText: (filePath: string) => Promise<string>
+    readImageThumbnail: (filePath: string) => Promise<string | null>
     paginate: (payload: {
       text: string
       containerWidth: number
@@ -65,6 +66,7 @@ const api: ElectronAPI = {
   },
   files: {
     readText: (filePath) => ipcRenderer.invoke('files:readText', filePath),
+    readImageThumbnail: (filePath) => ipcRenderer.invoke('files:readImageThumbnail', filePath),
     paginate: (payload) => ipcRenderer.invoke('files:paginate', payload),
     paginateRemaining: (payload) => ipcRenderer.invoke('files:paginateRemaining', payload)
   },
