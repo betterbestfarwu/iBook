@@ -105,10 +105,10 @@ export function SettingsPage(): JSX.Element {
                       <img
                         src={bgThumbUrl}
                         alt="背景图预览"
-                        className="h-20 w-32 rounded-lg border border-stone-200 object-cover"
+                        className="max-h-20 max-w-32 rounded-lg border border-stone-200"
                       />
                     ) : (
-                      <div className="flex h-20 w-32 items-center justify-center rounded-lg border border-stone-200 bg-stone-100 text-xs text-stone-400">
+                      <div className="flex h-20 w-32 items-center justify-center rounded-lg border border-dashed border-stone-200 bg-stone-100 text-xs text-stone-400">
                         加载中…
                       </div>
                     )}
