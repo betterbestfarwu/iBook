@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
-import { useReaderStore, useSettingsStore } from '../stores'
+import { useBooksStore, useReaderStore, useSettingsStore } from '../stores'
 import type { Book } from '../types'
 import { hasRecognizedChapters, parseChapters, splitTextByChapters } from '../utils/chapters'
+import { buildBookProgress } from '../utils/progress'
 
 const LINE_HEIGHT = 1.8
 const PADDING = 48
@@ -60,7 +61,12 @@ export function useBookLoader() {
         setReadMode('chapter', titles)
         setLoading(true, targetPage > 0 ? `恢复至第 ${targetPage + 1} 章…` : '正在分章…')
         setPages(pages, pages.length)
-        setCurrentPage(pages.length > 0 ? Math.min(targetPage, pages.length - 1) : 0)
+        const page = pages.length > 0 ? Math.min(targetPage, pages.length - 1) : 0
+        setCurrentPage(page)
+        const progress = buildBookProgress(page, pages, text, pages.length, 'chapter', titles)
+        if (progress) {
+          void useBooksStore.getState().updateProgress(book.id, page, progress)
+        }
         setLoading(false)
         void loadAnnotations(book.id)
         return
@@ -77,7 +83,12 @@ export function useBookLoader() {
       })
 
       setPages(pages, totalPages)
-      setCurrentPage(pages.length > 0 ? Math.min(targetPage, pages.length - 1) : 0)
+      const page = pages.length > 0 ? Math.min(targetPage, pages.length - 1) : 0
+      setCurrentPage(page)
+      const progress = buildBookProgress(page, pages, text, totalPages, 'page')
+      if (progress) {
+        void useBooksStore.getState().updateProgress(book.id, page, progress)
+      }
       setLoading(false)
 
       void loadAnnotations(book.id)

@@ -53,7 +53,14 @@ export function registerBookHandlers(): void {
       _event,
       bookId: string,
       page: number,
-      progress?: { charsRead: number; totalCharCount: number; readMode?: 'chapter' | 'page' }
+      progress?: {
+        charsRead: number
+        totalCharCount: number
+        readMode?: 'chapter' | 'page'
+        lastReadChapter?: number
+        totalChapters?: number
+        hasChapterPreface?: boolean
+      }
     ) => {
       const library = readLibrary()
       const book = library.find((b) => b.id === bookId)
@@ -63,6 +70,9 @@ export function registerBookHandlers(): void {
           book.charsRead = progress.charsRead
           book.totalCharCount = progress.totalCharCount
           if (progress.readMode) book.readMode = progress.readMode
+          if (progress.lastReadChapter != null) book.lastReadChapter = progress.lastReadChapter
+          if (progress.totalChapters != null) book.totalChapters = progress.totalChapters
+          if (progress.hasChapterPreface != null) book.hasChapterPreface = progress.hasChapterPreface
         }
         writeLibrary(library)
       }

@@ -11,19 +11,21 @@ export interface Book {
   readMode?: ReadMode
   charsRead?: number
   totalCharCount?: number
+  lastReadChapter?: number
+  totalChapters?: number
+  hasChapterPreface?: boolean
 }
 
 export interface BookProgress {
   charsRead: number
   totalCharCount: number
   readMode?: ReadMode
+  lastReadChapter?: number
+  totalChapters?: number
+  hasChapterPreface?: boolean
 }
 
-export function getReadPercent(book: Book): number | null {
-  const { charsRead, totalCharCount } = book
-  if (charsRead == null || !totalCharCount) return null
-  return Math.min(100, Math.round((charsRead / totalCharCount) * 100))
-}
+export { getUnreadPercent as getReadPercent } from '../utils/progress'
 
 export interface Annotation {
   id: string

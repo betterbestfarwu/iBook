@@ -5,6 +5,7 @@ import { getThemePreset, type ThemeKey } from '../../types'
 import { BackgroundPicker } from '../../components/BackgroundPicker'
 import { buildAnnotatedHtml, getSelectionOffsets, getPagePreview } from '../../utils/annotations'
 import { buildPageChapterMap } from '../../utils/chapters'
+import { buildBookProgress } from '../../utils/progress'
 import { LINE_HEIGHT, PADDING } from '../../hooks/useBookLoader'
 import { AppToolbar } from '../../components/AppToolbar'
 import { SelectionToolbar } from './SelectionToolbar'
@@ -81,22 +82,33 @@ export function ReaderPage(): JSX.Element {
   const saveProgress = useCallback(
     (page: number) => {
       if (!book) return
-      const { pages: currentPages, text } = useReaderStore.getState()
-      const charsRead = currentPages.slice(0, page + 1).reduce((sum, p) => sum + p.length, 0)
-      const totalCharCount = text.length || book.totalCharCount
-      const { readMode: mode } = useReaderStore.getState()
-      const progress =
-        totalCharCount > 0
-          ? { charsRead, totalCharCount, readMode: mode }
-          : { readMode: mode }
-      void updateBookProgress(book.id, page, progress)
-      setBook({
-        ...book,
-        lastReadPage: page,
-        charsRead,
-        totalCharCount,
-        readMode: mode
-      })
+      const {
+        pages: currentPages,
+        text,
+        totalPages: storeTotalPages,
+        readMode: mode,
+        pageTitles
+      } = useReaderStore.getState()
+      const progress = buildBookProgress(
+        page,
+        currentPages,
+        text,
+        Math.max(storeTotalPages, currentPages.length),
+        mode,
+        pageTitles
+      )
+      void updateBookProgress(book.id, page, progress ?? { readMode: mode })
+      if (progress) {
+        setBook({
+          ...book,
+          lastReadPage: page,
+          charsRead: progress.charsRead,
+          totalCharCount: progress.totalCharCount,
+          readMode: mode
+        })
+      } else {
+        setBook({ ...book, lastReadPage: page, readMode: mode })
+      }
     },
     [book, setBook, updateBookProgress]
   )
@@ -165,16 +177,25 @@ export function ReaderPage(): JSX.Element {
 
   useEffect(() => {
     return () => {
-      const { book: b, currentPage: page, pages: currentPages, text } = useReaderStore.getState()
+      const {
+        book: b,
+        currentPage: page,
+        pages: currentPages,
+        text,
+        totalPages: storeTotalPages,
+        readMode: mode,
+        pageTitles
+      } = useReaderStore.getState()
       if (!b) return
-      const charsRead = currentPages.slice(0, page + 1).reduce((sum, p) => sum + p.length, 0)
-      const totalCharCount = text.length || b.totalCharCount
-      const { readMode: mode } = useReaderStore.getState()
-      const progress =
-        totalCharCount > 0
-          ? { charsRead, totalCharCount, readMode: mode }
-          : { readMode: mode }
-      void useBooksStore.getState().updateProgress(b.id, page, progress)
+      const progress = buildBookProgress(
+        page,
+        currentPages,
+        text,
+        Math.max(storeTotalPages, currentPages.length),
+        mode,
+        pageTitles
+      )
+      void useBooksStore.getState().updateProgress(b.id, page, progress ?? { readMode: mode })
     }
   }, [])
 

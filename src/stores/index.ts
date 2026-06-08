@@ -45,7 +45,16 @@ export const useBooksStore = create<BooksState>((set, get) => ({
     set({
       books: get().books.map((b) =>
         b.id === bookId
-          ? { ...b, lastReadPage: page, charsRead: progress?.charsRead, totalCharCount: progress?.totalCharCount, readMode: progress?.readMode ?? b.readMode }
+          ? {
+              ...b,
+              lastReadPage: page,
+              charsRead: progress?.charsRead,
+              totalCharCount: progress?.totalCharCount,
+              readMode: progress?.readMode ?? b.readMode,
+              lastReadChapter: progress?.lastReadChapter,
+              totalChapters: progress?.totalChapters,
+              hasChapterPreface: progress?.hasChapterPreface
+            }
           : b
       )
     })
