@@ -309,8 +309,8 @@ export function ReaderPage(): JSX.Element {
         }}
       />
 
-      <main ref={contentRef} className="relative flex flex-1 items-center justify-center overflow-hidden p-4">
-        <div className="page-flip-container h-full w-full max-w-3xl">
+      <main ref={contentRef} className="relative flex flex-1 overflow-hidden">
+        <div className="page-flip-container h-full w-full">
           <div className={`page-flip-inner relative h-full w-full ${slideAnim ? `sliding-${slideAnim}` : ''}`}>
             <div
               ref={pageScrollRef}

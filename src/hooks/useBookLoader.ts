@@ -4,6 +4,8 @@ import type { Book } from '../types'
 
 const LINE_HEIGHT = 1.8
 const PADDING = 48
+const TOOLBAR_HEIGHT = 48
+const FOOTER_HEIGHT = 36
 
 export function useBookLoader() {
   const settings = useSettingsStore((s) => s.settings)
@@ -18,11 +20,9 @@ export function useBookLoader() {
   } = useReaderStore()
 
   const getLayout = useCallback(() => {
-    const w = window.innerWidth - 80
-    const h = window.innerHeight - 120
     return {
-      containerWidth: Math.max(w, 400),
-      containerHeight: Math.max(h, 500),
+      containerWidth: Math.max(window.innerWidth, 400),
+      containerHeight: Math.max(window.innerHeight - TOOLBAR_HEIGHT - FOOTER_HEIGHT, 500),
       fontSize: settings.fontSize,
       lineHeight: LINE_HEIGHT,
       padding: PADDING
