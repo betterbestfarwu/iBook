@@ -71,6 +71,43 @@ export function detectChapterTitle(line: string, patterns?: RegExp[]): string | 
   return null
 }
 
+function chapterSliceEnd(text: string, chapters: Chapter[], index: number): number {
+  return index + 1 < chapters.length ? chapters[index + 1].charOffset : text.length
+}
+
+/** 章节标题行之后、下一章节标题行之前是否有正文 */
+function hasBodyAfterTitle(lines: string[], titleIndex: number, patterns: RegExp[]): boolean {
+  for (let j = titleIndex + 1; j < lines.length; j++) {
+    if (detectChapterTitle(lines[j], patterns)) return false
+    if (lines[j].trim()) return true
+  }
+  return false
+}
+
+/** 移除无正文的孤立章节标题行（常见于被过滤的空章节） */
+function stripOrphanChapterTitles(text: string, patterns: RegExp[]): string {
+  const lines = text.split('\n')
+  const kept: string[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const title = detectChapterTitle(lines[i], patterns)
+    if (title && !hasBodyAfterTitle(lines, i, patterns)) continue
+    kept.push(lines[i])
+  }
+  return kept.join('\n')
+}
+
+function getChapterBody(text: string, start: number, end: number, patterns: RegExp[]): string {
+  const raw = text.slice(start, end)
+  return stripOrphanChapterTitles(stripChapterHeading(raw), patterns).trim()
+}
+
+function filterEmptyChapters(text: string, chapters: Chapter[], patterns: RegExp[]): Chapter[] {
+  return chapters.filter((chapter, index) => {
+    const end = chapterSliceEnd(text, chapters, index)
+    return getChapterBody(text, chapter.charOffset, end, patterns).length > 0
+  })
+}
+
 export function parseChapters(text: string): Chapter[] {
   const patterns = resolveChapterPatterns(text)
   const chapters: Chapter[] = []
@@ -88,7 +125,7 @@ export function parseChapters(text: string): Chapter[] {
     offset += line.length + 1
   }
 
-  return chapters
+  return filterEmptyChapters(text, chapters, patterns)
 }
 
 export function hasRecognizedChapters(chapters: Chapter[]): boolean {
@@ -101,18 +138,27 @@ export function splitTextByChapters(
 ): { pages: string[]; titles: string[] } {
   if (!chapters.length) return { pages: [], titles: [] }
 
+  const patterns = resolveChapterPatterns(text)
   const pages: string[] = []
   const titles: string[] = []
 
   if (chapters[0].charOffset > 0) {
-    pages.push(text.slice(0, chapters[0].charOffset))
-    titles.push('前言')
+    const preface = stripOrphanChapterTitles(
+      text.slice(0, chapters[0].charOffset).trim(),
+      patterns
+    )
+    if (preface) {
+      pages.push(preface)
+      titles.push('前言')
+    }
   }
 
   for (let i = 0; i < chapters.length; i++) {
     const start = chapters[i].charOffset
-    const end = i + 1 < chapters.length ? chapters[i + 1].charOffset : text.length
-    pages.push(stripChapterHeading(text.slice(start, end)))
+    const end = chapterSliceEnd(text, chapters, i)
+    const body = getChapterBody(text, start, end, patterns)
+    if (!body) continue
+    pages.push(body)
     titles.push(chapters[i].title)
   }
 
