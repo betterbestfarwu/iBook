@@ -68,10 +68,11 @@ export function ReaderPage(): JSX.Element {
   const allHighlights = useMemo(
     () =>
       annotations
-        .filter((a) => a.type === 'mark')
+        .filter((a) => a.type === 'mark' && a.text.trim())
         .sort((a, b) => a.page - b.page || a.start - b.start),
     [annotations]
   )
+  const hasHighlights = allHighlights.length > 0
   const isChapterMode = readMode === 'chapter'
   const unitLabel = isChapterMode ? '章' : '页'
   const navTitles = useMemo(
@@ -180,6 +181,10 @@ export function ReaderPage(): JSX.Element {
   useEffect(() => {
     if (pageNotes.length === 0) setNoteListOpen(false)
   }, [pageNotes.length])
+
+  useEffect(() => {
+    if (!hasHighlights) setHighlightListOpen(false)
+  }, [hasHighlights])
 
   useEffect(() => {
     const el = toolbarRef.current
@@ -502,9 +507,9 @@ export function ReaderPage(): JSX.Element {
           <span className="reader-footer__divider" aria-hidden="true" />
           <span>← → 方向键{isChapterMode ? '切章' : '翻页'}</span>
         </div>
-        {(allHighlights.length > 0 || pageNotes.length > 0) && (
+        {(hasHighlights || pageNotes.length > 0) && (
           <div ref={actionsWrapRef} className="reader-footer__actions">
-            {allHighlights.length > 0 && (
+            {hasHighlights && (
               <div className="reader-footer__notes">
                 <button
                   type="button"
