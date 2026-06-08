@@ -27,7 +27,7 @@ export function PageThumbnailNav({
   onMouseLeave
 }: PageThumbnailNavProps): JSX.Element {
   const listRef = useRef<HTMLDivElement>(null)
-  const activeRef = useRef<HTMLButtonElement>(null)
+  const activeRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (visible && activeRef.current) {
@@ -39,45 +39,61 @@ export function PageThumbnailNav({
 
   return (
     <aside
-      className={`sidebar-enter fixed left-0 z-30 flex w-[200px] flex-col border-r border-black/10 bg-white/95 shadow-xl backdrop-blur ${visible ? 'visible' : ''}`}
-      style={{ top: topOffset, height: `calc(100% - ${topOffset}px)` }}
+      className={`sidebar-enter fixed left-0 z-30 flex w-[140px] flex-col border-r shadow-xl ${visible ? 'visible' : ''}`}
+      style={{
+        top: topOffset,
+        height: `calc(100% - ${topOffset}px)`,
+        backgroundColor: theme.bg,
+        color: theme.text,
+        borderColor: `${theme.text}1a`
+      }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div ref={listRef} className="flex-1 overflow-y-auto p-2">
+      <div ref={listRef} className="scrollbar-hidden flex-1 overflow-y-auto p-2">
         {Array.from({ length: count }, (_, i) => {
           const text = pages[i]
           const isActive = i === currentPage
           const isLoading = text === undefined
 
           return (
-            <button
+            <div
               key={i}
               ref={isActive ? activeRef : undefined}
-              type="button"
-              onClick={() => onGoToPage(i)}
-              className={`thumbnail-item mb-2 w-full overflow-hidden rounded border-2 text-left ${
-                isActive ? 'active border-indigo-500' : 'border-stone-200 hover:border-stone-300'
-              }`}
+              className="mx-auto mb-2 w-[120px]"
             >
-              <div
-                className="h-[110px] overflow-hidden p-2 font-serif leading-tight"
+              <button
+                type="button"
+                onClick={() => onGoToPage(i)}
+                className={`thumbnail-item block w-full overflow-hidden rounded border-2 text-left ${
+                  isActive ? 'active' : ''
+                }`}
                 style={{
-                  backgroundColor: theme.bg,
-                  color: theme.text,
-                  fontSize
+                  borderColor: isActive ? undefined : `${theme.text}33`
                 }}
               >
-                {isLoading ? (
-                  <span className="text-stone-400">加载中…</span>
-                ) : (
-                  getPagePreview(text, 100)
-                )}
-              </div>
-              <div className="bg-stone-50 px-2 py-1 text-center text-[10px] text-stone-500">
+                <div
+                  className="h-[140px] w-[120px] overflow-hidden p-2 font-serif leading-tight"
+                  style={{
+                    backgroundColor: theme.bg,
+                    color: theme.text,
+                    fontSize
+                  }}
+                >
+                  {isLoading ? (
+                    <span style={{ opacity: 0.45 }}>加载中…</span>
+                  ) : (
+                    getPagePreview(text, 120)
+                  )}
+                </div>
+              </button>
+              <div
+                className="mt-1 text-center text-[10px]"
+                style={{ color: theme.text, opacity: 0.55 }}
+              >
                 第 {i + 1} 页
               </div>
-            </button>
+            </div>
           )
         })}
       </div>

@@ -111,6 +111,15 @@ mark.annotation-mark {
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
 }
 
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }
