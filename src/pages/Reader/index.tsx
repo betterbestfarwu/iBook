@@ -13,6 +13,7 @@ import { AnnotationDialog } from './AnnotationDialog'
 import { AnnotationBubble } from './AnnotationBubble'
 import { PageThumbnailNav } from './PageThumbnailNav'
 import { PageNoteList } from './PageNoteList'
+import { HighlightList } from './HighlightList'
 
 export function ReaderPage(): JSX.Element {
   const navigate = useNavigate()
@@ -49,8 +50,10 @@ export function ReaderPage(): JSX.Element {
   const [noteDialog, setNoteDialog] = useState<{ x: number; y: number; start: number; end: number; text: string } | null>(null)
   const [bubble, setBubble] = useState<{ x: number; y: number; note: string } | null>(null)
   const [noteListOpen, setNoteListOpen] = useState(false)
+  const [highlightListOpen, setHighlightListOpen] = useState(false)
   const hideSidebarTimer = useRef<ReturnType<typeof setTimeout>>()
-  const notesWrapRef = useRef<HTMLDivElement>(null)
+  const actionsWrapRef = useRef<HTMLDivElement>(null)
+  const pendingHighlightRef = useRef<string | null>(null)
 
   const theme = getThemePreset(settings.theme)
   const pageText = pages[currentPage] ?? ''
@@ -61,6 +64,13 @@ export function ReaderPage(): JSX.Element {
         .filter((a) => a.page === currentPage && a.type === 'note')
         .sort((a, b) => a.start - b.start),
     [annotations, currentPage]
+  )
+  const allHighlights = useMemo(
+    () =>
+      annotations
+        .filter((a) => a.type === 'mark')
+        .sort((a, b) => a.page - b.page || a.start - b.start),
+    [annotations]
   )
   const isChapterMode = readMode === 'chapter'
   const unitLabel = isChapterMode ? '章' : '页'
@@ -142,16 +152,30 @@ export function ReaderPage(): JSX.Element {
   useEffect(() => {
     pageScrollRef.current?.scrollTo({ top: 0 })
     setNoteListOpen(false)
+    setHighlightListOpen(false)
   }, [currentPage])
 
   useEffect(() => {
-    if (!noteListOpen) return
+    const id = pendingHighlightRef.current
+    if (!id) return
+    pendingHighlightRef.current = null
+    const timer = setTimeout(() => {
+      textRef.current?.querySelector(`mark[data-id="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [currentPage, pageText])
+
+  useEffect(() => {
+    if (!noteListOpen && !highlightListOpen) return
     const onPointerDown = (e: MouseEvent) => {
-      if (!notesWrapRef.current?.contains(e.target as Node)) setNoteListOpen(false)
+      if (!actionsWrapRef.current?.contains(e.target as Node)) {
+        setNoteListOpen(false)
+        setHighlightListOpen(false)
+      }
     }
     window.addEventListener('mousedown', onPointerDown)
     return () => window.removeEventListener('mousedown', onPointerDown)
-  }, [noteListOpen])
+  }, [noteListOpen, highlightListOpen])
 
   useEffect(() => {
     if (pageNotes.length === 0) setNoteListOpen(false)
@@ -330,10 +354,23 @@ export function ReaderPage(): JSX.Element {
     }
   }
 
+  const scrollToAnnotation = (id: string) => {
+    textRef.current?.querySelector(`mark[data-id="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
   const scrollToNote = (id: string) => {
-    const el = textRef.current?.querySelector(`mark[data-id="${id}"]`)
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    scrollToAnnotation(id)
     setNoteListOpen(false)
+  }
+
+  const goToHighlight = (highlight: (typeof annotations)[number]) => {
+    setHighlightListOpen(false)
+    if (highlight.page !== currentPage) {
+      pendingHighlightRef.current = highlight.id
+      goToPage(highlight.page)
+    } else {
+      scrollToAnnotation(highlight.id)
+    }
   }
 
   const selectBackground = (key: ThemeKey) => {
@@ -465,18 +502,48 @@ export function ReaderPage(): JSX.Element {
           <span className="reader-footer__divider" aria-hidden="true" />
           <span>← → 方向键{isChapterMode ? '切章' : '翻页'}</span>
         </div>
-        {pageNotes.length > 0 && (
-          <div ref={notesWrapRef} className="reader-footer__notes">
-            <button
-              type="button"
-              className={`reader-footer__notes-btn ${noteListOpen ? 'reader-footer__notes-btn--active' : ''}`}
-              onClick={() => setNoteListOpen((open) => !open)}
-              aria-expanded={noteListOpen}
-              aria-haspopup="dialog"
-            >
-              批注 {pageNotes.length}
-            </button>
-            {noteListOpen && <PageNoteList notes={pageNotes} onSelect={scrollToNote} />}
+        {(allHighlights.length > 0 || pageNotes.length > 0) && (
+          <div ref={actionsWrapRef} className="reader-footer__actions">
+            {allHighlights.length > 0 && (
+              <div className="reader-footer__notes">
+                <button
+                  type="button"
+                  className={`reader-footer__notes-btn ${highlightListOpen ? 'reader-footer__notes-btn--active' : ''}`}
+                  onClick={() => {
+                    setHighlightListOpen((open) => !open)
+                    setNoteListOpen(false)
+                  }}
+                  aria-expanded={highlightListOpen}
+                  aria-haspopup="dialog"
+                >
+                  高亮 {allHighlights.length}
+                </button>
+                {highlightListOpen && (
+                  <HighlightList
+                    highlights={allHighlights}
+                    navTitles={navTitles}
+                    onSelect={goToHighlight}
+                  />
+                )}
+              </div>
+            )}
+            {pageNotes.length > 0 && (
+              <div className="reader-footer__notes">
+                <button
+                  type="button"
+                  className={`reader-footer__notes-btn ${noteListOpen ? 'reader-footer__notes-btn--active' : ''}`}
+                  onClick={() => {
+                    setNoteListOpen((open) => !open)
+                    setHighlightListOpen(false)
+                  }}
+                  aria-expanded={noteListOpen}
+                  aria-haspopup="dialog"
+                >
+                  批注 {pageNotes.length}
+                </button>
+                {noteListOpen && <PageNoteList notes={pageNotes} onSelect={scrollToNote} />}
+              </div>
+            )}
           </div>
         )}
       </footer>
