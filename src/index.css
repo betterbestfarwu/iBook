@@ -32,6 +32,13 @@ mark.annotation-mark {
   cursor: pointer;
 }
 
+mark.annotation-mark--note {
+  background-color: transparent;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
 .page-flip-container {
   perspective: 2000px;
 }
@@ -479,4 +486,210 @@ mark.annotation-mark {
 .selection-toolbar__close:hover {
   background: rgba(120, 113, 108, 0.1);
   color: #57534e;
+}
+
+.annotation-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(28, 25, 23, 0.35);
+}
+
+.annotation-dialog {
+  width: min(400px, calc(100vw - 48px));
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 113, 108, 0.22);
+  background: linear-gradient(180deg, #fff 0%, #fafaf9 100%);
+  box-shadow:
+    0 8px 32px rgba(28, 25, 23, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+.annotation-dialog__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #44403c;
+}
+
+.annotation-dialog__input {
+  width: 100%;
+  resize: vertical;
+  min-height: 96px;
+  padding: 10px 12px;
+  border: 1px solid rgba(120, 113, 108, 0.25);
+  border-radius: 10px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #292524;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.annotation-dialog__input:focus {
+  border-color: rgba(99, 102, 241, 0.55);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.annotation-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.annotation-dialog__btn {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.annotation-dialog__btn--cancel {
+  color: #57534e;
+  background: rgba(120, 113, 108, 0.1);
+}
+
+.annotation-dialog__btn--cancel:hover {
+  background: rgba(120, 113, 108, 0.18);
+}
+
+.annotation-dialog__btn--confirm {
+  color: #fff;
+  background: #6366f1;
+}
+
+.annotation-dialog__btn--confirm:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+.annotation-dialog__btn--confirm:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.reader-footer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 8px 16px;
+  font-size: 0.75rem;
+}
+
+.reader-footer__center {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  opacity: 0.5;
+}
+
+.reader-footer__divider {
+  width: 1px;
+  height: 12px;
+  flex-shrink: 0;
+  background: currentColor;
+  opacity: 0.3;
+}
+
+.reader-footer__notes {
+  position: absolute;
+  right: 16px;
+  bottom: 4px;
+}
+
+.reader-footer__notes-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  color: inherit;
+  background: rgba(120, 113, 108, 0.08);
+  opacity: 1;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.reader-footer__notes-btn:hover,
+.reader-footer__notes-btn--active {
+  background: rgba(120, 113, 108, 0.16);
+  opacity: 1;
+}
+
+.page-note-list {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 80;
+  width: min(320px, calc(100vw - 32px));
+  max-height: 280px;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 113, 108, 0.28);
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(28, 25, 23, 0.18);
+}
+
+.page-note-list__header {
+  position: sticky;
+  top: 0;
+  padding: 10px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #44403c;
+  background: #fff;
+  border-bottom: 1px solid rgba(120, 113, 108, 0.15);
+}
+
+.page-note-list__empty {
+  margin: 0;
+  padding: 16px 14px;
+  font-size: 0.8125rem;
+  color: #a8a29e;
+  text-align: center;
+}
+
+.page-note-list__items {
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+}
+
+.page-note-list__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-align: left;
+  background: transparent;
+  transition: background-color 0.15s;
+}
+
+.page-note-list__item:hover {
+  background: rgba(120, 113, 108, 0.08);
+}
+
+.page-note-list__quote {
+  font-size: 0.75rem;
+  color: #57534e;
+  line-height: 1.4;
+}
+
+.page-note-list__content {
+  font-size: 0.8125rem;
+  color: #1c1917;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
 }

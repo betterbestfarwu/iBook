@@ -20,8 +20,13 @@ export function buildAnnotatedHtml(
     if (start > cursor) html += escapeHtml(pageText.slice(cursor, start))
     const slice = pageText.slice(start, end)
     if (slice) {
+      const isNote = ann.type === 'note' || !!ann.note
       const noteAttr = ann.note ? ` data-note="${escapeAttr(ann.note)}"` : ''
-      html += `<mark class="annotation-mark" data-id="${ann.id}" style="background-color:${ann.color}"${noteAttr}>${escapeHtml(slice)}</mark>`
+      if (isNote) {
+        html += `<mark class="annotation-mark annotation-mark--note" data-id="${ann.id}"${noteAttr}>${escapeHtml(slice)}</mark>`
+      } else {
+        html += `<mark class="annotation-mark" data-id="${ann.id}" style="background-color:${ann.color}"${noteAttr}>${escapeHtml(slice)}</mark>`
+      }
     }
     cursor = end
   }

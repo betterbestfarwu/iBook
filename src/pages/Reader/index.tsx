@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBooksStore, useSettingsStore, useReaderStore } from '../../stores'
 import { getThemePreset, type ThemeKey } from '../../types'
@@ -7,8 +7,10 @@ import { buildAnnotatedHtml, getSelectionOffsets, getPagePreview } from '../../u
 import { LINE_HEIGHT, PADDING } from '../../hooks/useBookLoader'
 import { AppToolbar } from '../../components/AppToolbar'
 import { SelectionToolbar } from './SelectionToolbar'
+import { AnnotationDialog } from './AnnotationDialog'
 import { AnnotationBubble } from './AnnotationBubble'
 import { PageThumbnailNav } from './PageThumbnailNav'
+import { PageNoteList } from './PageNoteList'
 
 export function ReaderPage(): JSX.Element {
   const navigate = useNavigate()
@@ -39,12 +41,22 @@ export function ReaderPage(): JSX.Element {
   const [sidebarVisible, setSidebarVisible] = useState(false)
   const [toolbarBottom, setToolbarBottom] = useState(48)
   const [selection, setSelection] = useState<{ x: number; y: number; start: number; end: number; text: string } | null>(null)
+  const [noteDialog, setNoteDialog] = useState<{ x: number; y: number; start: number; end: number; text: string } | null>(null)
   const [bubble, setBubble] = useState<{ x: number; y: number; note: string } | null>(null)
+  const [noteListOpen, setNoteListOpen] = useState(false)
   const hideSidebarTimer = useRef<ReturnType<typeof setTimeout>>()
+  const notesWrapRef = useRef<HTMLDivElement>(null)
 
   const theme = getThemePreset(settings.theme)
   const pageText = pages[currentPage] ?? ''
   const displayTotal = Math.max(totalPages, pages.length)
+  const pageNotes = useMemo(
+    () =>
+      annotations
+        .filter((a) => a.page === currentPage && a.type === 'note')
+        .sort((a, b) => a.start - b.start),
+    [annotations, currentPage]
+  )
   const pageBg = settings.backgroundImage ? 'rgba(255,255,255,0.92)' : settings.backgroundColor || theme.bg
 
   const bgStyle: React.CSSProperties = {
@@ -101,7 +113,21 @@ export function ReaderPage(): JSX.Element {
 
   useEffect(() => {
     pageScrollRef.current?.scrollTo({ top: 0 })
+    setNoteListOpen(false)
   }, [currentPage])
+
+  useEffect(() => {
+    if (!noteListOpen) return
+    const onPointerDown = (e: MouseEvent) => {
+      if (!notesWrapRef.current?.contains(e.target as Node)) setNoteListOpen(false)
+    }
+    window.addEventListener('mousedown', onPointerDown)
+    return () => window.removeEventListener('mousedown', onPointerDown)
+  }, [noteListOpen])
+
+  useEffect(() => {
+    if (pageNotes.length === 0) setNoteListOpen(false)
+  }, [pageNotes.length])
 
   useEffect(() => {
     const el = toolbarRef.current
@@ -134,7 +160,7 @@ export function ReaderPage(): JSX.Element {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (selection) return
+      if (selection || noteDialog) return
       if (e.key === 'ArrowRight' || e.key === ' ') goNext()
       if (e.key === 'ArrowLeft') goPrev()
     }
@@ -213,25 +239,46 @@ export function ReaderPage(): JSX.Element {
     window.getSelection()?.removeAllRanges()
   }
 
-  const handleHighlight = async (color: string, withNote?: boolean) => {
+  const handleHighlight = async (color: string) => {
     if (!selection || !book) return
-    let note: string | undefined
-    if (withNote) {
-      const input = window.prompt('输入批注内容：')
-      if (input === null) return
-      note = input || undefined
-    }
     await addAnnotation({
       bookId: book.id,
-      type: note ? 'note' : 'mark',
+      type: 'mark',
       color,
       page: currentPage,
       start: selection.start,
       end: selection.end,
-      text: selection.text,
-      note
+      text: selection.text
     })
     setSelection(null)
+    window.getSelection()?.removeAllRanges()
+  }
+
+  const handleOpenNoteDialog = () => {
+    if (!selection) return
+    setNoteDialog(selection)
+    setSelection(null)
+  }
+
+  const handleCancelNote = () => {
+    if (!noteDialog) return
+    setSelection(noteDialog)
+    setNoteDialog(null)
+  }
+
+  const handleConfirmNote = async (note: string) => {
+    if (!noteDialog || !book || !note) return
+    await addAnnotation({
+      bookId: book.id,
+      type: 'note',
+      color: 'transparent',
+      page: currentPage,
+      start: noteDialog.start,
+      end: noteDialog.end,
+      text: noteDialog.text,
+      note
+    })
+    setNoteDialog(null)
     window.getSelection()?.removeAllRanges()
   }
 
@@ -240,6 +287,12 @@ export function ReaderPage(): JSX.Element {
       clearTimeout(hideSidebarTimer.current)
       setSidebarVisible(true)
     }
+  }
+
+  const scrollToNote = (id: string) => {
+    const el = textRef.current?.querySelector(`mark[data-id="${id}"]`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setNoteListOpen(false)
   }
 
   const selectBackground = (key: ThemeKey) => {
@@ -341,13 +394,29 @@ export function ReaderPage(): JSX.Element {
         </div>
       </main>
 
-      <footer className="flex items-center justify-center gap-4 border-t border-black/10 px-4 py-2 text-xs opacity-50">
-        <span className="tabular-nums">
-          {currentPage + 1} / {displayTotal}
-          {isBackgroundPaginating && ' …'}
-        </span>
-        <span className="h-3 w-px shrink-0 bg-current opacity-30" aria-hidden="true" />
-        <span>← → 方向键翻页</span>
+      <footer className="reader-footer">
+        <div className="reader-footer__center">
+          <span className="tabular-nums">
+            {currentPage + 1} / {displayTotal}
+            {isBackgroundPaginating && ' …'}
+          </span>
+          <span className="reader-footer__divider" aria-hidden="true" />
+          <span>← → 方向键翻页</span>
+        </div>
+        {pageNotes.length > 0 && (
+          <div ref={notesWrapRef} className="reader-footer__notes">
+            <button
+              type="button"
+              className={`reader-footer__notes-btn ${noteListOpen ? 'reader-footer__notes-btn--active' : ''}`}
+              onClick={() => setNoteListOpen((open) => !open)}
+              aria-expanded={noteListOpen}
+              aria-haspopup="dialog"
+            >
+              批注 {pageNotes.length}
+            </button>
+            {noteListOpen && <PageNoteList notes={pageNotes} onSelect={scrollToNote} />}
+          </div>
+        )}
       </footer>
 
       {selection && (
@@ -357,10 +426,12 @@ export function ReaderPage(): JSX.Element {
           colors={settings.highlightColors}
           onErase={handleErase}
           onHighlight={(c) => handleHighlight(c)}
-          onAddNote={() => handleHighlight(settings.highlightColors[0], true)}
+          onAddNote={handleOpenNoteDialog}
           onClose={() => setSelection(null)}
         />
       )}
+
+      {noteDialog && <AnnotationDialog onConfirm={handleConfirmNote} onCancel={handleCancelNote} />}
 
       {bubble && <AnnotationBubble x={bubble.x} y={bubble.y} note={bubble.note} />}
     </div>
