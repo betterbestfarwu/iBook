@@ -42,6 +42,10 @@ function stripSitePrefix(line: string): string {
   return line.replace(SITE_BODY_PREFIX, '').trim()
 }
 
+function canonicalTitle(title: string): string {
+  return title.replace(/\s+/g, ' ').trim()
+}
+
 function normalizeTitle(line: string): string {
   const trimmed = stripSitePrefix(line.trim())
   const hash = trimmed.match(/^#{3}\s*(.+?)\s*#{3}$/)
@@ -75,7 +79,11 @@ export function parseChapters(text: string): Chapter[] {
   for (const line of text.split('\n')) {
     const title = detectChapterTitle(line, patterns)
     if (title) {
-      chapters.push({ title, charOffset: offset })
+      const last = chapters[chapters.length - 1]
+      // 正文(域名) 第二四六章 … 与 第二四六章 … 相邻重复标题只保留第一个分章点
+      if (!last || canonicalTitle(last.title) !== canonicalTitle(title)) {
+        chapters.push({ title, charOffset: offset })
+      }
     }
     offset += line.length + 1
   }
@@ -104,7 +112,7 @@ export function splitTextByChapters(
   for (let i = 0; i < chapters.length; i++) {
     const start = chapters[i].charOffset
     const end = i + 1 < chapters.length ? chapters[i + 1].charOffset : text.length
-    pages.push(text.slice(start, end))
+    pages.push(stripChapterHeading(text.slice(start, end)))
     titles.push(chapters[i].title)
   }
 
@@ -147,14 +155,34 @@ export function buildPageChapterMap(chapters: Chapter[], pages: string[]): strin
   return offsets.map((offset) => getChapterForOffset(chapters, offset)?.title ?? '')
 }
 
-/** 章节正文预览：去掉开头的章节标题行，避免与导航栏标签重复显示 */
+/** 去掉章节开头重复的标题行（含水印版与纯标题版） */
 export function stripChapterHeading(text: string): string {
   if (!text) return text
   const lines = text.split('\n')
-  if (!lines[0] || !detectChapterTitle(lines[0])) return text
+  let start = 0
+  let seenCanonical: string | null = null
 
-  let start = 1
-  while (start < lines.length && !lines[start].trim()) start++
+  while (start < lines.length) {
+    const line = lines[start]
+    if (!line.trim()) {
+      start++
+      continue
+    }
+
+    const title = detectChapterTitle(line)
+    if (!title) break
+
+    const canonical = canonicalTitle(title)
+    if (seenCanonical === canonical) {
+      start++
+      continue
+    }
+    if (seenCanonical !== null) break
+
+    seenCanonical = canonical
+    start++
+  }
+
   const body = lines.slice(start).join('\n').trim()
   return body || text
 }

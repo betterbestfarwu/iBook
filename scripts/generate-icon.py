@@ -8,7 +8,7 @@ SIZE = 1024
 CONTENT_RATIO = 0.80
 MARGIN = int(SIZE * (1 - CONTENT_RATIO) / 2)
 CONTENT = SIZE - 2 * MARGIN
-GRAPHIC_RATIO = 0.80  # book graphic occupies 80% of content area
+GRAPHIC_RATIO = 0.90  # book graphic occupies 90% of content area
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "build"

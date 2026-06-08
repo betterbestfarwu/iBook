@@ -46,7 +46,7 @@ export function PageThumbnailNav({
 
   return (
     <aside
-      className={`sidebar-enter fixed left-0 z-30 flex w-[140px] flex-col border-r shadow-xl ${visible ? 'visible' : ''}`}
+      className={`sidebar-enter fixed left-0 z-30 flex w-[160px] flex-col border-r ${visible ? 'visible' : ''}`}
       style={{
         top: topOffset,
         height: `calc(100% - ${topOffset}px)`,
@@ -57,7 +57,7 @@ export function PageThumbnailNav({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div ref={listRef} className="scrollbar-hidden flex-1 overflow-y-auto p-2">
+      <div ref={listRef} className="sidebar-scroll flex-1 overflow-x-hidden overflow-y-auto p-2">
         {Array.from({ length: count }, (_, i) => {
           const text = pages[i]
           const isActive = i === currentPage
@@ -75,20 +75,18 @@ export function PageThumbnailNav({
               <button
                 type="button"
                 onClick={() => onGoToPage(i)}
-                className={`thumbnail-item block w-full overflow-hidden rounded border-2 text-left ${
+                className={`thumbnail-item block w-full text-left ${
                   isActive ? 'active' : ''
                 }`}
                 style={{
+                  backgroundColor: theme.bg,
+                  color: theme.text,
                   borderColor: isActive ? undefined : `${theme.text}33`
                 }}
               >
                 <div
-                  className="h-[140px] w-[120px] overflow-hidden p-2 font-serif leading-tight"
-                  style={{
-                    backgroundColor: theme.bg,
-                    color: theme.text,
-                    fontSize
-                  }}
+                  className="thumbnail-item__preview font-serif leading-tight"
+                  style={{ fontSize }}
                 >
                   {isLoading ? (
                     <span style={{ opacity: 0.45 }}>加载中…</span>

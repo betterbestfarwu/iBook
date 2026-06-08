@@ -88,6 +88,9 @@ mark.annotation-mark--note {
 .sidebar-enter {
   transform: translateX(-100%);
   transition: transform 0.22s ease-out;
+  box-shadow:
+    4px 0 16px rgba(28, 25, 23, 0.12),
+    2px 0 6px rgba(28, 25, 23, 0.06);
 }
 
 .sidebar-enter.visible {
@@ -110,12 +113,36 @@ mark.annotation-mark--note {
 }
 
 .thumbnail-item {
-  transition: border-color 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+  border: 1px solid rgba(120, 113, 108, 0.14);
+  border-radius: 6px;
+  transition: border-color 0.15s;
+}
+
+.thumbnail-item__preview {
+  height: 140px;
+  overflow: hidden;
+  padding: 8px;
 }
 
 .thumbnail-item.active {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+  border-color: #a8a29e;
+}
+
+.sidebar-scroll {
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 113, 108, 0.45) transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 0;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(120, 113, 108, 0.45);
+  border-radius: 3px;
 }
 
 .scrollbar-hidden {
