@@ -30,11 +30,13 @@ export function ReaderPage(): JSX.Element {
   const contentRef = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLDivElement>(null)
   const pageScrollRef = useRef<HTMLDivElement>(null)
+  const toolbarRef = useRef<HTMLElement>(null)
 
   const [slideAnim, setSlideAnim] = useState<'next-out' | 'next-in' | 'prev-out' | 'prev-in' | null>(null)
 
   const SLIDE_MS = 280
   const [sidebarVisible, setSidebarVisible] = useState(false)
+  const [toolbarBottom, setToolbarBottom] = useState(48)
   const [selection, setSelection] = useState<{ x: number; y: number; start: number; end: number; text: string } | null>(null)
   const [bubble, setBubble] = useState<{ x: number; y: number; note: string } | null>(null)
   const hideSidebarTimer = useRef<ReturnType<typeof setTimeout>>()
@@ -99,6 +101,24 @@ export function ReaderPage(): JSX.Element {
   useEffect(() => {
     pageScrollRef.current?.scrollTo({ top: 0 })
   }, [currentPage])
+
+  useEffect(() => {
+    const el = toolbarRef.current
+    if (!el) return
+
+    const update = () => {
+      setToolbarBottom(el.getBoundingClientRect().bottom)
+    }
+
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    window.addEventListener('resize', update)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', update)
+    }
+  }, [book])
 
   useEffect(() => {
     return () => {
@@ -236,21 +256,7 @@ export function ReaderPage(): JSX.Element {
       {/* Left hover trigger zone */}
       <div className="fixed left-0 top-0 z-20 h-full w-5" />
 
-      <PageThumbnailNav
-        visible={sidebarVisible}
-        pages={pages}
-        currentPage={currentPage}
-        totalPages={displayTotal}
-        theme={theme}
-        fontSize={Math.max(8, settings.fontSize * 0.45)}
-        onGoToPage={(p) => goToPage(p)}
-        onMouseEnter={() => clearTimeout(hideSidebarTimer.current)}
-        onMouseLeave={() => {
-          hideSidebarTimer.current = setTimeout(() => setSidebarVisible(false), 250)
-        }}
-      />
-
-      <AppToolbar variant="reader" style={{ color: theme.text }}>
+      <AppToolbar ref={toolbarRef} variant="reader" style={{ color: theme.text }}>
         <div className="flex min-w-0 items-center gap-1">
           <button
             type="button"
@@ -287,6 +293,21 @@ export function ReaderPage(): JSX.Element {
           <BackgroundPicker theme={settings.theme} onSelect={selectBackground} />
         </div>
       </AppToolbar>
+
+      <PageThumbnailNav
+        visible={sidebarVisible}
+        topOffset={toolbarBottom}
+        pages={pages}
+        currentPage={currentPage}
+        totalPages={displayTotal}
+        theme={theme}
+        fontSize={Math.max(8, settings.fontSize * 0.45)}
+        onGoToPage={(p) => goToPage(p)}
+        onMouseEnter={() => clearTimeout(hideSidebarTimer.current)}
+        onMouseLeave={() => {
+          hideSidebarTimer.current = setTimeout(() => setSidebarVisible(false), 250)
+        }}
+      />
 
       <main ref={contentRef} className="relative flex flex-1 items-center justify-center overflow-hidden p-4">
         <div className="page-flip-container h-full w-full max-w-3xl">

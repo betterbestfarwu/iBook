@@ -3,12 +3,12 @@ import { getPagePreview } from '../../utils/annotations'
 
 interface PageThumbnailNavProps {
   visible: boolean
+  topOffset: number
   pages: string[]
   currentPage: number
   totalPages: number
   theme: { bg: string; text: string }
   fontSize: number
-  onNavigateHome: () => void
   onGoToPage: (page: number) => void
   onMouseEnter: () => void
   onMouseLeave: () => void
@@ -16,12 +16,12 @@ interface PageThumbnailNavProps {
 
 export function PageThumbnailNav({
   visible,
+  topOffset,
   pages,
   currentPage,
   totalPages,
   theme,
   fontSize,
-  onNavigateHome,
   onGoToPage,
   onMouseEnter,
   onMouseLeave
@@ -39,19 +39,11 @@ export function PageThumbnailNav({
 
   return (
     <aside
-      className={`sidebar-enter fixed left-0 top-0 z-30 flex h-full w-[200px] flex-col border-r border-black/10 bg-white/95 shadow-xl backdrop-blur ${visible ? 'visible' : ''}`}
+      className={`sidebar-enter fixed left-0 z-30 flex w-[200px] flex-col border-r border-black/10 bg-white/95 shadow-xl backdrop-blur ${visible ? 'visible' : ''}`}
+      style={{ top: topOffset, height: `calc(100% - ${topOffset}px)` }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <button
-        type="button"
-        onClick={onNavigateHome}
-        className="flex h-10 shrink-0 items-center gap-2 border-b border-black/10 px-3 text-sm text-stone-700 hover:bg-stone-100"
-      >
-        <span>←</span>
-        <span>返回主页</span>
-      </button>
-
       <div ref={listRef} className="flex-1 overflow-y-auto p-2">
         {Array.from({ length: count }, (_, i) => {
           const text = pages[i]
