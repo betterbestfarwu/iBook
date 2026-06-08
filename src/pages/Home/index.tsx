@@ -74,13 +74,12 @@ export function HomePage(): JSX.Element {
       }, 300)
 
       try {
-        await loadBook(freshBook, () => {
-          setFlip((f) => (f ? { ...f, progress: 100, phase: 'done' } : null))
-          setTimeout(() => {
-            navigate(`/reader/${book.id}`)
-            setTimeout(() => setFlip(null), 400)
-          }, 350)
-        })
+        await loadBook(freshBook)
+        setFlip((f) => (f ? { ...f, progress: 100, phase: 'done' } : null))
+        setTimeout(() => {
+          navigate(`/reader/${book.id}`)
+          setTimeout(() => setFlip(null), 400)
+        }, 350)
       } catch (err) {
         setFlip((f) => (f ? { ...f, phase: 'closing' } : null))
         setTimeout(() => setFlip(null), 650)
