@@ -1,0 +1,15 @@
+{
+  "appId": "com.ibook.reader",
+  "productName": "iBook",
+  "directories": {
+    "output": "dist"
+  },
+  "files": ["out/**/*"],
+  "mac": {
+    "target": ["dmg"],
+    "category": "public.app-category.productivity"
+  },
+  "win": {
+    "target": ["nsis"]
+  }
+}
