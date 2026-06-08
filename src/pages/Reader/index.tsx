@@ -23,7 +23,8 @@ export function ReaderPage(): JSX.Element {
     isBackgroundPaginating,
     setCurrentPage,
     setBook,
-    addAnnotation
+    addAnnotation,
+    removeAnnotation
   } = useReaderStore()
   const updateBookProgress = useBooksStore((s) => s.updateProgress)
 
@@ -200,6 +201,18 @@ export function ReaderPage(): JSX.Element {
     }
   }, [currentPage, pageText, annotations])
 
+  const handleErase = async () => {
+    if (!selection || !book) return
+    const overlapping = annotations.filter(
+      (a) => a.page === currentPage && a.start < selection.end && a.end > selection.start
+    )
+    for (const ann of overlapping) {
+      await removeAnnotation(ann.id)
+    }
+    setSelection(null)
+    window.getSelection()?.removeAllRanges()
+  }
+
   const handleHighlight = async (color: string, withNote?: boolean) => {
     if (!selection || !book) return
     let note: string | undefined
@@ -342,6 +355,7 @@ export function ReaderPage(): JSX.Element {
           x={selection.x}
           y={selection.y}
           colors={settings.highlightColors}
+          onErase={handleErase}
           onHighlight={(c) => handleHighlight(c)}
           onAddNote={() => handleHighlight(settings.highlightColors[0], true)}
           onClose={() => setSelection(null)}

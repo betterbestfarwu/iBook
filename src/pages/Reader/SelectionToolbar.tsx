@@ -1,7 +1,10 @@
+import { EraserIcon } from '../../components/icons'
+
 interface SelectionToolbarProps {
   x: number
   y: number
   colors: string[]
+  onErase: () => void
   onHighlight: (color: string) => void
   onAddNote: () => void
   onClose: () => void
@@ -11,6 +14,7 @@ export function SelectionToolbar({
   x,
   y,
   colors,
+  onErase,
   onHighlight,
   onAddNote,
   onClose
@@ -21,6 +25,10 @@ export function SelectionToolbar({
       style={{ left: x, top: y }}
       onMouseDown={(e) => e.preventDefault()}
     >
+      <button type="button" title="抹除" onClick={onErase} className="selection-toolbar__icon">
+        <EraserIcon className="h-4 w-4" />
+      </button>
+      <div className="selection-toolbar__divider" />
       {colors.map((color) => (
         <button
           key={color}

@@ -434,6 +434,23 @@ mark.annotation-mark {
   background: rgba(120, 113, 108, 0.2);
 }
 
+.selection-toolbar__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  padding: 4px;
+  color: #57534e;
+  background: transparent;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.selection-toolbar__icon:hover {
+  background: rgba(120, 113, 108, 0.1);
+  color: #44403c;
+}
+
 .selection-toolbar__action {
   border: none;
   border-radius: 8px;
