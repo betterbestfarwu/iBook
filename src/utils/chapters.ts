@@ -134,3 +134,15 @@ export function buildPageChapterMap(chapters: Chapter[], pages: string[]): strin
   const offsets = getPageStartOffsets(pages)
   return offsets.map((offset) => getChapterForOffset(chapters, offset)?.title ?? '')
 }
+
+/** 章节正文预览：去掉开头的章节标题行，避免与导航栏标签重复显示 */
+export function stripChapterHeading(text: string): string {
+  if (!text) return text
+  const lines = text.split('\n')
+  if (!lines[0] || !detectChapterTitle(lines[0])) return text
+
+  let start = 1
+  while (start < lines.length && !lines[start].trim()) start++
+  const body = lines.slice(start).join('\n').trim()
+  return body || text
+}

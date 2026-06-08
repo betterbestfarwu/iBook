@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { getPagePreview } from '../../utils/annotations'
+import { stripChapterHeading } from '../../utils/chapters'
 import type { ReadMode } from '../../types'
 
 interface PageThumbnailNavProps {
@@ -46,7 +47,7 @@ export function PageThumbnailNav({
 
   return (
     <aside
-      className={`sidebar-enter fixed left-0 z-30 flex w-[160px] flex-col border-r shadow-xl ${visible ? 'visible' : ''}`}
+      className={`sidebar-enter fixed left-0 z-30 flex w-[130px] flex-col border-r shadow-xl ${visible ? 'visible' : ''}`}
       style={{
         top: topOffset,
         height: `calc(100% - ${topOffset}px)`,
@@ -70,7 +71,7 @@ export function PageThumbnailNav({
             <div
               key={i}
               ref={isActive ? activeRef : undefined}
-              className="mx-auto mb-2 w-[140px]"
+              className="mx-auto mb-2 w-[110px]"
             >
               <button
                 type="button"
@@ -83,7 +84,7 @@ export function PageThumbnailNav({
                 }}
               >
                 <div
-                  className="h-[140px] w-[140px] overflow-hidden p-2 font-serif leading-tight"
+                  className="h-[140px] w-[110px] overflow-hidden p-2 font-serif leading-tight"
                   style={{
                     backgroundColor: theme.bg,
                     color: theme.text,
@@ -93,7 +94,12 @@ export function PageThumbnailNav({
                   {isLoading ? (
                     <span style={{ opacity: 0.45 }}>加载中…</span>
                   ) : (
-                    getPagePreview(text, 140)
+                    getPagePreview(
+                      isChapterMode && title && title !== '前言'
+                        ? stripChapterHeading(text)
+                        : text,
+                      110
+                    )
                   )}
                 </div>
               </button>
