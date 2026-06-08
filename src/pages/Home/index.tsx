@@ -102,7 +102,11 @@ export function HomePage(): JSX.Element {
       onDrop={handleDrop}
     >
       <AppToolbar>
-        <h1 className="app-toolbar__title text-lg">iBook 书架</h1>
+        <h1 className="app-toolbar__title app-toolbar__brand">
+          <span className="app-toolbar__brand-mark">iBook</span>
+          <span className="app-toolbar__brand-sep" aria-hidden="true" />
+          <span className="app-toolbar__brand-label">书架</span>
+        </h1>
         <div className="app-toolbar__actions">
           <button
             type="button"
