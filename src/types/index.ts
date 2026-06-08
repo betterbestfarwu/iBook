@@ -1,3 +1,5 @@
+export type ReadMode = 'chapter' | 'page'
+
 export interface Book {
   id: string
   title: string
@@ -6,6 +8,7 @@ export interface Book {
   fileHash: string
   addedAt: number
   lastReadPage: number
+  readMode?: ReadMode
   charsRead?: number
   totalCharCount?: number
 }
@@ -13,6 +16,7 @@ export interface Book {
 export interface BookProgress {
   charsRead: number
   totalCharCount: number
+  readMode?: ReadMode
 }
 
 export function getReadPercent(book: Book): number | null {
@@ -62,6 +66,11 @@ export interface BookContent {
 export interface PaginateResult {
   pages: string[]
   totalPages: number
+}
+
+export interface Chapter {
+  title: string
+  charOffset: number
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {

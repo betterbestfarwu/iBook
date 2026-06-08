@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useReaderStore, useSettingsStore } from '../stores'
 import type { Book } from '../types'
+import { hasRecognizedChapters, parseChapters, splitTextByChapters } from '../utils/chapters'
 
 const LINE_HEIGHT = 1.8
 const PADDING = 48
@@ -12,6 +13,8 @@ export function useBookLoader() {
   const {
     setBook,
     setText,
+    setChapters,
+    setReadMode,
     setPages,
     setCurrentPage,
     setLoading,
@@ -46,7 +49,24 @@ export function useBookLoader() {
       }
       setText(text)
 
+      const chapters = parseChapters(text)
+      setChapters(chapters)
+
       const targetPage = book.lastReadPage ?? 0
+      const useChapterMode = hasRecognizedChapters(chapters)
+
+      if (useChapterMode) {
+        const { pages, titles } = splitTextByChapters(text, chapters)
+        setReadMode('chapter', titles)
+        setLoading(true, targetPage > 0 ? `恢复至第 ${targetPage + 1} 章…` : '正在分章…')
+        setPages(pages, pages.length)
+        setCurrentPage(pages.length > 0 ? Math.min(targetPage, pages.length - 1) : 0)
+        setLoading(false)
+        void loadAnnotations(book.id)
+        return
+      }
+
+      setReadMode('page', [])
       setLoading(true, targetPage > 0 ? `恢复至第 ${targetPage + 1} 页…` : '正在排版…')
 
       const layout = getLayout()
@@ -75,6 +95,8 @@ export function useBookLoader() {
       loadAnnotations,
       setBackgroundPaginating,
       setBook,
+      setChapters,
+      setReadMode,
       setCurrentPage,
       setLoading,
       setPages,

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Book, BookProgress, Annotation, AppSettings } from '../types'
+import type { Book, BookProgress, Annotation, AppSettings, Chapter, ReadMode } from '../types'
 import { DEFAULT_SETTINGS } from '../types'
 
 interface BooksState {
@@ -44,7 +44,9 @@ export const useBooksStore = create<BooksState>((set, get) => ({
     await window.electronAPI.books.updateProgress(bookId, page, progress)
     set({
       books: get().books.map((b) =>
-        b.id === bookId ? { ...b, lastReadPage: page, ...progress } : b
+        b.id === bookId
+          ? { ...b, lastReadPage: page, charsRead: progress?.charsRead, totalCharCount: progress?.totalCharCount, readMode: progress?.readMode ?? b.readMode }
+          : b
       )
     })
   },
@@ -86,6 +88,9 @@ interface ReaderState {
   book: Book | null
   text: string
   pages: string[]
+  chapters: Chapter[]
+  pageTitles: string[]
+  readMode: ReadMode
   currentPage: number
   totalPages: number
   annotations: Annotation[]
@@ -95,6 +100,8 @@ interface ReaderState {
 
   setBook: (book: Book | null) => void
   setText: (text: string) => void
+  setChapters: (chapters: Chapter[]) => void
+  setReadMode: (mode: ReadMode, pageTitles?: string[]) => void
   setPages: (pages: string[], totalPages?: number) => void
   appendPages: (pages: string[], totalPages: number) => void
   setCurrentPage: (page: number) => void
@@ -110,6 +117,9 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   book: null,
   text: '',
   pages: [],
+  chapters: [],
+  pageTitles: [],
+  readMode: 'page',
   currentPage: 0,
   totalPages: 0,
   annotations: [],
@@ -124,6 +134,9 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
         book,
         text: '',
         pages: [],
+        chapters: [],
+        pageTitles: [],
+        readMode: 'page',
         currentPage: 0,
         totalPages: 0,
         annotations: [],
@@ -136,6 +149,8 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
     set({ book })
   },
   setText: (text) => set({ text }),
+  setChapters: (chapters) => set({ chapters }),
+  setReadMode: (readMode, pageTitles = []) => set({ readMode, pageTitles }),
   setPages: (pages, totalPages) =>
     set({ pages, totalPages: totalPages ?? pages.length }),
   appendPages: (newPages, totalPages) => {
@@ -173,6 +188,9 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       book: null,
       text: '',
       pages: [],
+      chapters: [],
+      pageTitles: [],
+      readMode: 'page',
       currentPage: 0,
       totalPages: 0,
       annotations: [],

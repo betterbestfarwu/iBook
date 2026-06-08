@@ -51,7 +51,7 @@ export function BookCover({
           </h3>
           {book.lastReadPage > 0 && (
             <span className="text-xs text-white/60">
-              读到第 {book.lastReadPage + 1} 页
+              读到第 {book.lastReadPage + 1} {book.readMode === 'chapter' ? '章' : '页'}
               {readPercent !== null && (
                 <span className="ml-1.5 tabular-nums">{readPercent}%</span>
               )}

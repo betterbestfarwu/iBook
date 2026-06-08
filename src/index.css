@@ -206,6 +206,27 @@ mark.annotation-mark--note {
   letter-spacing: 0.01em;
 }
 
+.app-toolbar__chapter-wrap {
+  display: flex;
+  justify-content: center;
+  -webkit-app-region: drag;
+}
+
+.app-toolbar__chapter {
+  display: block;
+  max-width: 100%;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  opacity: 0.72;
+  text-align: center;
+}
+
+.app-toolbar__chapter--primary {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
 .app-toolbar__actions {
   display: flex;
   align-items: center;

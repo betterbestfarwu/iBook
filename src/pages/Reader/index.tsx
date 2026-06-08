@@ -4,6 +4,7 @@ import { useBooksStore, useSettingsStore, useReaderStore } from '../../stores'
 import { getThemePreset, type ThemeKey } from '../../types'
 import { BackgroundPicker } from '../../components/BackgroundPicker'
 import { buildAnnotatedHtml, getSelectionOffsets, getPagePreview } from '../../utils/annotations'
+import { buildPageChapterMap } from '../../utils/chapters'
 import { LINE_HEIGHT, PADDING } from '../../hooks/useBookLoader'
 import { AppToolbar } from '../../components/AppToolbar'
 import { SelectionToolbar } from './SelectionToolbar'
@@ -19,6 +20,9 @@ export function ReaderPage(): JSX.Element {
   const {
     book,
     pages,
+    chapters,
+    pageTitles,
+    readMode,
     currentPage,
     totalPages,
     annotations,
@@ -57,6 +61,13 @@ export function ReaderPage(): JSX.Element {
         .sort((a, b) => a.start - b.start),
     [annotations, currentPage]
   )
+  const isChapterMode = readMode === 'chapter'
+  const unitLabel = isChapterMode ? '章' : '页'
+  const navTitles = useMemo(
+    () => (isChapterMode ? pageTitles : buildPageChapterMap(chapters, pages)),
+    [isChapterMode, pageTitles, chapters, pages]
+  )
+  const currentChapterTitle = navTitles[currentPage] ?? ''
   const pageBg = settings.backgroundImage ? 'rgba(255,255,255,0.92)' : settings.backgroundColor || theme.bg
 
   const bgStyle: React.CSSProperties = {
@@ -73,13 +84,18 @@ export function ReaderPage(): JSX.Element {
       const { pages: currentPages, text } = useReaderStore.getState()
       const charsRead = currentPages.slice(0, page + 1).reduce((sum, p) => sum + p.length, 0)
       const totalCharCount = text.length || book.totalCharCount
-      const progress = totalCharCount > 0 ? { charsRead, totalCharCount } : undefined
+      const { readMode: mode } = useReaderStore.getState()
+      const progress =
+        totalCharCount > 0
+          ? { charsRead, totalCharCount, readMode: mode }
+          : { readMode: mode }
       void updateBookProgress(book.id, page, progress)
       setBook({
         ...book,
         lastReadPage: page,
         charsRead,
-        totalCharCount
+        totalCharCount,
+        readMode: mode
       })
     },
     [book, setBook, updateBookProgress]
@@ -153,7 +169,11 @@ export function ReaderPage(): JSX.Element {
       if (!b) return
       const charsRead = currentPages.slice(0, page + 1).reduce((sum, p) => sum + p.length, 0)
       const totalCharCount = text.length || b.totalCharCount
-      const progress = totalCharCount > 0 ? { charsRead, totalCharCount } : undefined
+      const { readMode: mode } = useReaderStore.getState()
+      const progress =
+        totalCharCount > 0
+          ? { charsRead, totalCharCount, readMode: mode }
+          : { readMode: mode }
       void useBooksStore.getState().updateProgress(b.id, page, progress)
     }
   }, [])
@@ -336,7 +356,20 @@ export function ReaderPage(): JSX.Element {
           >
             ←
           </button>
-          <span className="app-toolbar__title truncate opacity-80">{book.title}</span>
+          <span
+            className={`truncate ${isChapterMode ? 'text-xs opacity-50' : 'app-toolbar__title opacity-80'}`}
+          >
+            {book.title}
+          </span>
+        </div>
+        <div className="app-toolbar__chapter-wrap min-w-0 flex-1 px-3">
+          <span
+            className={`app-toolbar__chapter truncate ${isChapterMode ? 'app-toolbar__chapter--primary' : ''}`}
+            title={currentChapterTitle || undefined}
+          >
+            {currentChapterTitle ||
+              (isChapterMode ? `第 ${currentPage + 1} 章` : `第 ${currentPage + 1} 页`)}
+          </span>
         </div>
         <div className="app-toolbar__actions">
           <div className="font-size-control">
@@ -364,6 +397,8 @@ export function ReaderPage(): JSX.Element {
         visible={sidebarVisible}
         topOffset={toolbarBottom}
         pages={pages}
+        navTitles={navTitles}
+        readMode={readMode}
         currentPage={currentPage}
         totalPages={displayTotal}
         theme={theme}
@@ -397,11 +432,17 @@ export function ReaderPage(): JSX.Element {
       <footer className="reader-footer">
         <div className="reader-footer__center">
           <span className="tabular-nums">
-            {currentPage + 1} / {displayTotal}
-            {isBackgroundPaginating && ' …'}
+            {isChapterMode && currentChapterTitle ? (
+              <>
+                <span className="max-w-[40vw] truncate">{currentChapterTitle}</span>
+                <span className="mx-1.5 opacity-40">·</span>
+              </>
+            ) : null}
+            {currentPage + 1} / {displayTotal} {unitLabel}
+            {!isChapterMode && isBackgroundPaginating && ' …'}
           </span>
           <span className="reader-footer__divider" aria-hidden="true" />
-          <span>← → 方向键翻页</span>
+          <span>← → 方向键{isChapterMode ? '切章' : '翻页'}</span>
         </div>
         {pageNotes.length > 0 && (
           <div ref={notesWrapRef} className="reader-footer__notes">

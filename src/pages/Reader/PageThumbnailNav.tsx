@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { getPagePreview } from '../../utils/annotations'
+import type { ReadMode } from '../../types'
 
 interface PageThumbnailNavProps {
   visible: boolean
   topOffset: number
   pages: string[]
+  navTitles: string[]
+  readMode: ReadMode
   currentPage: number
   totalPages: number
   theme: { bg: string; text: string }
@@ -18,6 +21,8 @@ export function PageThumbnailNav({
   visible,
   topOffset,
   pages,
+  navTitles,
+  readMode,
   currentPage,
   totalPages,
   theme,
@@ -28,6 +33,8 @@ export function PageThumbnailNav({
 }: PageThumbnailNavProps): JSX.Element {
   const listRef = useRef<HTMLDivElement>(null)
   const activeRef = useRef<HTMLDivElement>(null)
+  const isChapterMode = readMode === 'chapter'
+  const unitLabel = isChapterMode ? '章' : '页'
 
   useEffect(() => {
     if (visible && activeRef.current) {
@@ -39,7 +46,7 @@ export function PageThumbnailNav({
 
   return (
     <aside
-      className={`sidebar-enter fixed left-0 z-30 flex w-[140px] flex-col border-r shadow-xl ${visible ? 'visible' : ''}`}
+      className={`sidebar-enter fixed left-0 z-30 flex w-[160px] flex-col border-r shadow-xl ${visible ? 'visible' : ''}`}
       style={{
         top: topOffset,
         height: `calc(100% - ${topOffset}px)`,
@@ -55,12 +62,15 @@ export function PageThumbnailNav({
           const text = pages[i]
           const isActive = i === currentPage
           const isLoading = text === undefined
+          const title = navTitles[i]
+          const label =
+            isChapterMode && title ? title : `第 ${i + 1} ${unitLabel}`
 
           return (
             <div
               key={i}
               ref={isActive ? activeRef : undefined}
-              className="mx-auto mb-2 w-[120px]"
+              className="mx-auto mb-2 w-[140px]"
             >
               <button
                 type="button"
@@ -73,7 +83,7 @@ export function PageThumbnailNav({
                 }}
               >
                 <div
-                  className="h-[140px] w-[120px] overflow-hidden p-2 font-serif leading-tight"
+                  className="h-[140px] w-[140px] overflow-hidden p-2 font-serif leading-tight"
                   style={{
                     backgroundColor: theme.bg,
                     color: theme.text,
@@ -83,15 +93,20 @@ export function PageThumbnailNav({
                   {isLoading ? (
                     <span style={{ opacity: 0.45 }}>加载中…</span>
                   ) : (
-                    getPagePreview(text, 120)
+                    getPagePreview(text, 140)
                   )}
                 </div>
               </button>
               <div
-                className="mt-1 text-center text-[10px]"
-                style={{ color: theme.text, opacity: 0.55 }}
+                className="mt-1 text-center text-[10px] leading-tight"
+                style={{ color: theme.text, opacity: isChapterMode ? 0.85 : 0.55 }}
               >
-                第 {i + 1} 页
+                <div className="truncate px-0.5 font-medium" title={label}>
+                  {label}
+                </div>
+                {isChapterMode && title ? (
+                  <div style={{ opacity: 0.5 }}>第 {i + 1} 章</div>
+                ) : null}
               </div>
             </div>
           )
