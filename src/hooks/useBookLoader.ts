@@ -30,7 +30,7 @@ export function useBookLoader() {
   }, [settings.fontSize])
 
   const loadBook = useCallback(
-    async (book: Book, onReady?: () => void) => {
+    async (book: Book) => {
       setBook(book)
       setLoading(true, '正在读取文件…')
 
@@ -40,6 +40,10 @@ export function useBookLoader() {
       }
 
       const text = await window.electronAPI.files.readText(book.filePath)
+      if (!text.trim()) {
+        setLoading(false)
+        throw new Error('TXT 文件为空或无法识别编码，请另存为 UTF-8 后重试')
+      }
       setText(text)
 
       const targetPage = book.lastReadPage ?? 0
@@ -53,11 +57,10 @@ export function useBookLoader() {
       })
 
       setPages(pages, totalPages)
-      setCurrentPage(Math.min(targetPage, pages.length - 1))
+      setCurrentPage(pages.length > 0 ? Math.min(targetPage, pages.length - 1) : 0)
       setLoading(false)
-      onReady?.()
 
-      await loadAnnotations(book.id)
+      void loadAnnotations(book.id)
 
       setBackgroundPaginating(true)
       window.electronAPI.files

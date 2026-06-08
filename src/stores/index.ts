@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Book, Annotation, AppSettings } from '../types'
+import type { Book, BookProgress, Annotation, AppSettings } from '../types'
 import { DEFAULT_SETTINGS } from '../types'
 
 interface BooksState {
@@ -9,7 +9,7 @@ interface BooksState {
   loadBooks: () => Promise<void>
   addBooks: (paths: string[]) => Promise<{ added: Book[]; duplicates: string[]; errors: string[] }>
   removeSelected: () => Promise<void>
-  updateProgress: (bookId: string, page: number) => Promise<void>
+  updateProgress: (bookId: string, page: number, progress?: BookProgress) => Promise<void>
   toggleSelect: (id: string) => void
   clearSelection: () => void
 }
@@ -40,10 +40,12 @@ export const useBooksStore = create<BooksState>((set, get) => ({
     set({ books, selectedIds: new Set() })
   },
 
-  updateProgress: async (bookId, page) => {
-    await window.electronAPI.books.updateProgress(bookId, page)
+  updateProgress: async (bookId, page, progress) => {
+    await window.electronAPI.books.updateProgress(bookId, page, progress)
     set({
-      books: get().books.map((b) => (b.id === bookId ? { ...b, lastReadPage: page } : b))
+      books: get().books.map((b) =>
+        b.id === bookId ? { ...b, lastReadPage: page, ...progress } : b
+      )
     })
   },
 
@@ -115,7 +117,24 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   loadStage: '',
   isBackgroundPaginating: false,
 
-  setBook: (book) => set({ book }),
+  setBook: (book) => {
+    const prev = get().book
+    if (!book || prev?.id !== book.id) {
+      set({
+        book,
+        text: '',
+        pages: [],
+        currentPage: 0,
+        totalPages: 0,
+        annotations: [],
+        loading: false,
+        loadStage: '',
+        isBackgroundPaginating: false
+      })
+      return
+    }
+    set({ book })
+  },
   setText: (text) => set({ text }),
   setPages: (pages, totalPages) =>
     set({ pages, totalPages: totalPages ?? pages.length }),

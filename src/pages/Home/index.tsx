@@ -2,8 +2,10 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppToolbar } from '../../components/AppToolbar'
 import { BookCover } from '../../components/BookCover'
-import { useBooksStore, useToastStore, useReaderStore } from '../../stores'
+import { MoonIcon, PlusIcon, SettingsIcon, SunIcon, TrashIcon } from '../../components/icons'
+import { useBooksStore, useToastStore, useReaderStore, useSettingsStore } from '../../stores'
 import { useBookLoader } from '../../hooks/useBookLoader'
+import { THEME_PRESETS } from '../../types'
 import type { Book } from '../../types'
 
 interface FlipState {
@@ -16,7 +18,9 @@ interface FlipState {
 export function HomePage(): JSX.Element {
   const navigate = useNavigate()
   const { books, selectedIds, addBooks, removeSelected, toggleSelect, loadBooks } = useBooksStore()
+  const { settings, updateSettings } = useSettingsStore()
   const showToast = useToastStore((s) => s.show)
+  const isDarkMode = settings.theme === 'dark'
   const { loadBook } = useBookLoader()
   const resetReader = useReaderStore((s) => s.reset)
 
@@ -39,6 +43,12 @@ export function HomePage(): JSX.Element {
   const handleOpenDialog = async () => {
     const paths = await window.electronAPI.openFiles()
     await handleAddFiles(paths)
+  }
+
+  const toggleDarkMode = () => {
+    const next = isDarkMode ? 'cream' : 'dark'
+    const preset = THEME_PRESETS[next]
+    void updateSettings({ theme: next, backgroundColor: preset.bg, backgroundImage: '' })
   }
 
   const handleDrop = async (e: React.DragEvent) => {
@@ -82,7 +92,9 @@ export function HomePage(): JSX.Element {
 
   return (
     <div
-      className="flex h-full flex-col bg-gradient-to-br from-stone-100 to-stone-200"
+      className={`home-page flex h-full flex-col bg-gradient-to-br ${
+        isDarkMode ? 'home-page--dark from-stone-900 to-black' : 'from-stone-100 to-stone-200'
+      }`}
       onDragOver={(e) => {
         e.preventDefault()
         setDragOver(true)
@@ -93,32 +105,60 @@ export function HomePage(): JSX.Element {
       <AppToolbar>
         <h1 className="app-toolbar__title text-lg">iBook 书架</h1>
         <div className="app-toolbar__actions">
-          <button type="button" onClick={handleOpenDialog} className="app-toolbar__btn app-toolbar__btn--primary">
-            添加
+          <button
+            type="button"
+            onClick={handleOpenDialog}
+            className="app-toolbar__btn app-toolbar__btn--icon app-toolbar__btn--primary"
+            title="添加"
+            aria-label="添加"
+          >
+            <PlusIcon />
           </button>
           <button
             type="button"
             onClick={() => removeSelected()}
             disabled={selectedIds.size === 0}
-            className="app-toolbar__btn"
+            className="app-toolbar__btn app-toolbar__btn--icon"
+            title="删除"
+            aria-label="删除"
           >
-            删除
+            <TrashIcon />
           </button>
-          <button type="button" onClick={() => navigate('/settings')} className="app-toolbar__btn">
-            设置
+          <div className="app-toolbar__divider" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={toggleDarkMode}
+            className={`app-toolbar__btn app-toolbar__btn--icon ${isDarkMode ? 'app-toolbar__btn--active' : ''}`}
+            title={isDarkMode ? '浅色模式' : '黑夜模式'}
+            aria-label={isDarkMode ? '浅色模式' : '黑夜模式'}
+          >
+            {isDarkMode ? <SunIcon /> : <MoonIcon />}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/settings')}
+            className="app-toolbar__btn app-toolbar__btn--icon"
+            title="设置"
+            aria-label="设置"
+          >
+            <SettingsIcon />
           </button>
         </div>
       </AppToolbar>
 
       <main
         className={`flex-1 overflow-y-auto p-8 transition-colors ${
-          dragOver ? 'bg-indigo-50/80' : ''
+          dragOver ? (isDarkMode ? 'bg-indigo-950/40' : 'bg-indigo-50/80') : ''
         }`}
       >
         {books.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-stone-400">
+          <div
+            className={`flex h-full flex-col items-center justify-center ${
+              isDarkMode ? 'text-stone-500' : 'text-stone-400'
+            }`}
+          >
             <p className="mb-2 text-lg">书架空空如也</p>
-            <p className="text-sm">拖拽 TXT 文件到此处，或点击「添加」</p>
+            <p className="text-sm">拖拽 TXT 文件到此处，或点击上方 + 按钮</p>
           </div>
         ) : (
           <div className="flex flex-wrap gap-8">

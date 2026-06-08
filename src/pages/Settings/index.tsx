@@ -1,5 +1,5 @@
 import { useSettingsStore } from '../../stores'
-import { THEME_PRESETS } from '../../types'
+import { THEME_ORDER, THEME_PRESETS } from '../../types'
 
 export function SettingsPage(): JSX.Element {
   const { settings, updateSettings } = useSettingsStore()
@@ -18,13 +18,16 @@ export function SettingsPage(): JSX.Element {
               阅读主题
             </h2>
             <div className="grid grid-cols-2 gap-2">
-              {(Object.keys(THEME_PRESETS) as Array<keyof typeof THEME_PRESETS>).map((key) => {
+              {THEME_ORDER.map((key) => {
                 const t = THEME_PRESETS[key]
                 return (
                   <button
                     key={key}
                     type="button"
-                    onClick={() => updateSettings({ theme: key })}
+                    onClick={() => {
+                      const preset = THEME_PRESETS[key]
+                      updateSettings({ theme: key, backgroundColor: preset.bg, backgroundImage: '' })
+                    }}
                     className={`rounded-lg border-2 p-3 text-left transition-colors ${
                       settings.theme === key ? 'border-indigo-500' : 'border-stone-200'
                     }`}

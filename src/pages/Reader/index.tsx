@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBooksStore, useSettingsStore, useReaderStore } from '../../stores'
-import { THEME_PRESETS } from '../../types'
+import { getThemePreset, type ThemeKey } from '../../types'
+import { BackgroundPicker } from '../../components/BackgroundPicker'
 import { buildAnnotatedHtml, getSelectionOffsets, getPagePreview } from '../../utils/annotations'
 import { LINE_HEIGHT, PADDING } from '../../hooks/useBookLoader'
 import { AppToolbar } from '../../components/AppToolbar'
@@ -30,18 +31,21 @@ export function ReaderPage(): JSX.Element {
   const textRef = useRef<HTMLDivElement>(null)
   const pageScrollRef = useRef<HTMLDivElement>(null)
 
-  const [flipping, setFlipping] = useState<'next' | 'prev' | null>(null)
+  const [slideAnim, setSlideAnim] = useState<'next-out' | 'next-in' | 'prev-out' | 'prev-in' | null>(null)
+
+  const SLIDE_MS = 280
   const [sidebarVisible, setSidebarVisible] = useState(false)
   const [selection, setSelection] = useState<{ x: number; y: number; start: number; end: number; text: string } | null>(null)
   const [bubble, setBubble] = useState<{ x: number; y: number; note: string } | null>(null)
   const hideSidebarTimer = useRef<ReturnType<typeof setTimeout>>()
 
-  const theme = THEME_PRESETS[settings.theme]
+  const theme = getThemePreset(settings.theme)
   const pageText = pages[currentPage] ?? ''
   const displayTotal = Math.max(totalPages, pages.length)
+  const pageBg = settings.backgroundImage ? 'rgba(255,255,255,0.92)' : settings.backgroundColor || theme.bg
 
   const bgStyle: React.CSSProperties = {
-    backgroundColor: settings.backgroundImage ? undefined : settings.backgroundColor || theme.bg,
+    backgroundColor: settings.backgroundImage ? undefined : pageBg,
     backgroundImage: settings.backgroundImage ? `url(file://${settings.backgroundImage})` : undefined,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
@@ -51,8 +55,17 @@ export function ReaderPage(): JSX.Element {
   const saveProgress = useCallback(
     (page: number) => {
       if (!book) return
-      void updateBookProgress(book.id, page)
-      setBook({ ...book, lastReadPage: page })
+      const { pages: currentPages, text } = useReaderStore.getState()
+      const charsRead = currentPages.slice(0, page + 1).reduce((sum, p) => sum + p.length, 0)
+      const totalCharCount = text.length || book.totalCharCount
+      const progress = totalCharCount > 0 ? { charsRead, totalCharCount } : undefined
+      void updateBookProgress(book.id, page, progress)
+      setBook({
+        ...book,
+        lastReadPage: page,
+        charsRead,
+        totalCharCount
+      })
     },
     [book, setBook, updateBookProgress]
   )
@@ -63,12 +76,15 @@ export function ReaderPage(): JSX.Element {
       if (target === currentPage) return
 
       if (animate) {
-        setFlipping(animate)
+        const out = animate === 'next' ? 'next-out' : 'prev-out'
+        const inn = animate === 'next' ? 'next-in' : 'prev-in'
+        setSlideAnim(out)
         setTimeout(() => {
           setCurrentPage(target)
           saveProgress(target)
-          setFlipping(null)
-        }, 550)
+          setSlideAnim(inn)
+          setTimeout(() => setSlideAnim(null), SLIDE_MS)
+        }, SLIDE_MS)
       } else {
         setCurrentPage(target)
         saveProgress(target)
@@ -86,8 +102,12 @@ export function ReaderPage(): JSX.Element {
 
   useEffect(() => {
     return () => {
-      const { book: b, currentPage: page } = useReaderStore.getState()
-      if (b) void useBooksStore.getState().updateProgress(b.id, page)
+      const { book: b, currentPage: page, pages: currentPages, text } = useReaderStore.getState()
+      if (!b) return
+      const charsRead = currentPages.slice(0, page + 1).reduce((sum, p) => sum + p.length, 0)
+      const totalCharCount = text.length || b.totalCharCount
+      const progress = totalCharCount > 0 ? { charsRead, totalCharCount } : undefined
+      void useBooksStore.getState().updateProgress(b.id, page, progress)
     }
   }, [])
 
@@ -189,10 +209,9 @@ export function ReaderPage(): JSX.Element {
     }
   }
 
-  const cycleTheme = () => {
-    const order: Array<typeof settings.theme> = ['eye-care', 'white', 'dark', 'black']
-    const idx = order.indexOf(settings.theme)
-    updateSettings({ theme: order[(idx + 1) % order.length] })
+  const selectBackground = (key: ThemeKey) => {
+    const preset = getThemePreset(key)
+    updateSettings({ theme: key, backgroundColor: preset.bg, backgroundImage: '' })
   }
 
   if (!book) {
@@ -224,10 +243,6 @@ export function ReaderPage(): JSX.Element {
         totalPages={displayTotal}
         theme={theme}
         fontSize={Math.max(8, settings.fontSize * 0.45)}
-        onNavigateHome={() => {
-          saveProgress(currentPage)
-          navigate('/')
-        }}
         onGoToPage={(p) => goToPage(p)}
         onMouseEnter={() => clearTimeout(hideSidebarTimer.current)}
         onMouseLeave={() => {
@@ -236,47 +251,50 @@ export function ReaderPage(): JSX.Element {
       />
 
       <AppToolbar variant="reader" style={{ color: theme.text }}>
-        <span className="app-toolbar__title truncate opacity-80">{book.title}</span>
+        <div className="flex min-w-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              saveProgress(currentPage)
+              navigate('/')
+            }}
+            className="app-toolbar__btn app-toolbar__btn--ghost app-toolbar__btn--icon shrink-0"
+            aria-label="返回主页"
+            title="返回主页"
+          >
+            ←
+          </button>
+          <span className="app-toolbar__title truncate opacity-80">{book.title}</span>
+        </div>
         <div className="app-toolbar__actions">
-          <span className="px-2 text-sm tabular-nums opacity-70">
-            {currentPage + 1} / {displayTotal}
-            {isBackgroundPaginating && ' …'}
-          </span>
-          <button
-            type="button"
-            onClick={() => updateSettings({ fontSize: Math.max(12, settings.fontSize - 2) })}
-            className="app-toolbar__btn app-toolbar__btn--ghost"
-          >
-            A−
-          </button>
-          <button
-            type="button"
-            onClick={() => updateSettings({ fontSize: Math.min(36, settings.fontSize + 2) })}
-            className="app-toolbar__btn app-toolbar__btn--ghost"
-          >
-            A+
-          </button>
-          <button type="button" onClick={cycleTheme} className="app-toolbar__btn app-toolbar__btn--ghost">
-            {theme.name}
-          </button>
+          <div className="font-size-control">
+            <button
+              type="button"
+              onClick={() => updateSettings({ fontSize: Math.max(12, settings.fontSize - 2) })}
+              className="app-toolbar__btn app-toolbar__btn--ghost"
+            >
+              A−
+            </button>
+            <span className="font-size-control__value tabular-nums">{settings.fontSize}</span>
+            <button
+              type="button"
+              onClick={() => updateSettings({ fontSize: Math.min(36, settings.fontSize + 2) })}
+              className="app-toolbar__btn app-toolbar__btn--ghost"
+            >
+              A+
+            </button>
+          </div>
+          <BackgroundPicker theme={settings.theme} onSelect={selectBackground} />
         </div>
       </AppToolbar>
 
       <main ref={contentRef} className="relative flex flex-1 items-center justify-center overflow-hidden p-4">
-        <div
-          className="page-flip-container h-full w-full max-w-3xl"
-          onClick={(e) => {
-            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-            const x = e.clientX - rect.left
-            if (x < rect.width * 0.35) goPrev()
-            else if (x > rect.width * 0.65) goNext()
-          }}
-        >
-          <div className={`page-flip-inner relative h-full w-full ${flipping ? `flipping-${flipping}` : ''}`}>
+        <div className="page-flip-container h-full w-full max-w-3xl">
+          <div className={`page-flip-inner relative h-full w-full ${slideAnim ? `sliding-${slideAnim}` : ''}`}>
             <div
               ref={pageScrollRef}
-              className="page-face absolute inset-0 overflow-y-auto rounded-lg p-12 shadow-inner"
-              style={{ backgroundColor: settings.backgroundImage ? 'rgba(255,255,255,0.92)' : 'transparent' }}
+              className="absolute inset-0 overflow-y-auto rounded-lg p-12 shadow-inner"
+              style={{ backgroundColor: settings.backgroundImage ? pageBg : 'transparent' }}
             >
               <div
                 ref={textRef}
@@ -285,17 +303,20 @@ export function ReaderPage(): JSX.Element {
                 dangerouslySetInnerHTML={{ __html: annotatedHtml }}
               />
             </div>
-            <div
-              className="page-face back absolute inset-0 rounded-lg shadow-inner"
-              style={{ backgroundColor: theme.bg }}
-            />
           </div>
         </div>
       </main>
 
-      <footer className="flex justify-center gap-4 border-t border-black/10 py-2 text-xs opacity-50">
-        <span>点击左侧上一页 · 右侧下一页</span>
-        <span>← → 方向键翻页</span>
+      <footer className="flex items-center justify-start border-t border-black/10 px-4 py-2 text-xs opacity-50">
+        <span className="tabular-nums">
+          {currentPage + 1} / {displayTotal}
+          {isBackgroundPaginating && ' …'}
+        </span>
+        <span className="mx-4 h-3 w-px shrink-0 bg-current opacity-30" aria-hidden="true" />
+        <div className="flex gap-4">
+          <span>点击左侧上一页 · 右侧下一页</span>
+          <span>← → 方向键翻页</span>
+        </div>
       </footer>
 
       {selection && (

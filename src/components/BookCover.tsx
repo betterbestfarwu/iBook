@@ -1,4 +1,5 @@
 import type { Book } from '../types'
+import { getReadPercent } from '../types'
 
 interface BookCoverProps {
   book: Book
@@ -20,6 +21,7 @@ export function BookCover({
   className = ''
 }: BookCoverProps): JSX.Element {
   const hue = hashToHue(book.title)
+  const readPercent = getReadPercent(book)
 
   return (
     <div
@@ -48,7 +50,12 @@ export function BookCover({
             {book.title}
           </h3>
           {book.lastReadPage > 0 && (
-            <span className="text-xs text-white/60">读到第 {book.lastReadPage + 1} 页</span>
+            <span className="text-xs text-white/60">
+              读到第 {book.lastReadPage + 1} 页
+              {readPercent !== null && (
+                <span className="ml-1.5 tabular-nums">{readPercent}%</span>
+              )}
+            </span>
           )}
         </div>
       </div>

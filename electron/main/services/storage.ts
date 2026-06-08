@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } fr
 import { createHash } from 'crypto'
 import { v4 as uuidv4 } from 'uuid'
 import type { Book, Annotation, AppSettings } from '../../../src/types'
-import { DEFAULT_SETTINGS } from '../../../src/types'
+import { DEFAULT_SETTINGS, normalizeThemeKey } from '../../../src/types'
 
 function getDataDir(): string {
   const dir = join(app.getPath('userData'), 'iBook')
@@ -49,11 +49,17 @@ export function writeLibrary(books: Book[]): void {
   writeFileSync(getLibraryPath(), JSON.stringify(books, null, 2), 'utf-8')
 }
 
+function normalizeSettings(raw: Partial<AppSettings>): AppSettings {
+  const settings = { ...DEFAULT_SETTINGS, ...raw }
+  settings.theme = normalizeThemeKey(settings.theme)
+  return settings
+}
+
 export function readSettings(): AppSettings {
   const path = getSettingsPath()
   if (!existsSync(path)) return { ...DEFAULT_SETTINGS }
   try {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(readFileSync(path, 'utf-8')) }
+    return normalizeSettings(JSON.parse(readFileSync(path, 'utf-8')) as Partial<AppSettings>)
   } catch {
     return { ...DEFAULT_SETTINGS }
   }

@@ -47,13 +47,25 @@ export function registerBookHandlers(): void {
     return library
   })
 
-  ipcMain.handle('books:updateProgress', (_event, bookId: string, page: number) => {
-    const library = readLibrary()
-    const book = library.find((b) => b.id === bookId)
-    if (book) {
-      book.lastReadPage = page
-      writeLibrary(library)
+  ipcMain.handle(
+    'books:updateProgress',
+    (
+      _event,
+      bookId: string,
+      page: number,
+      progress?: { charsRead: number; totalCharCount: number }
+    ) => {
+      const library = readLibrary()
+      const book = library.find((b) => b.id === bookId)
+      if (book) {
+        book.lastReadPage = page
+        if (progress) {
+          book.charsRead = progress.charsRead
+          book.totalCharCount = progress.totalCharCount
+        }
+        writeLibrary(library)
+      }
+      return book
     }
-    return book
-  })
+  )
 }

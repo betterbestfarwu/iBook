@@ -2,15 +2,35 @@ import { readFileSync } from 'fs'
 import chardet from 'chardet'
 import iconv from 'iconv-lite'
 
+export function normalizeLineEndings(text: string): string {
+  return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+}
+
+function resolveEncoding(buffer: Buffer): string {
+  const detected = (chardet.detect(buffer) ?? 'utf-8').toLowerCase()
+  if (detected.includes('gb')) return 'gbk'
+  if (detected.includes('big5')) return 'big5'
+  if (detected.includes('utf-16')) return detected.includes('le') ? 'utf-16le' : 'utf-16be'
+  return 'utf-8'
+}
+
+function decodeText(buffer: Buffer): string {
+  const encoding = resolveEncoding(buffer)
+  try {
+    const text = iconv.decode(buffer, encoding)
+    if (encoding === 'utf-8' && text.includes('\uFFFD')) {
+      const gbk = iconv.decode(buffer, 'gbk')
+      if (!gbk.includes('\uFFFD')) return normalizeLineEndings(gbk)
+    }
+    return normalizeLineEndings(text)
+  } catch {
+    return normalizeLineEndings(buffer.toString('utf-8'))
+  }
+}
+
 export function readTextFile(filePath: string): string {
   const buffer = readFileSync(filePath)
-  const detected = chardet.detect(buffer) ?? 'utf-8'
-  const encoding = detected.toLowerCase().includes('gb') ? 'gbk' : detected
-  try {
-    return iconv.decode(buffer, encoding)
-  } catch {
-    return buffer.toString('utf-8')
-  }
+  return decodeText(buffer)
 }
 
 export function paginateText(

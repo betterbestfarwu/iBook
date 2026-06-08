@@ -121,23 +121,33 @@ mark.annotation-mark {
 }
 
 .app-toolbar {
-  -webkit-app-region: drag;
   position: relative;
   z-index: 10;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: stretch;
   flex-shrink: 0;
   min-height: 48px;
-  padding: 10px 20px;
+  padding: 0;
   border-bottom: 1px solid rgba(120, 113, 108, 0.18);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(250, 250, 249, 0.72) 100%);
   backdrop-filter: blur(12px);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 }
 
-.app-toolbar--darwin {
-  padding-left: 84px;
+.app-toolbar__window-controls {
+  flex-shrink: 0;
+  width: 78px;
+  -webkit-app-region: no-drag;
+}
+
+.app-toolbar__inner {
+  -webkit-app-region: drag;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 10px 20px 10px 6px;
 }
 
 .app-toolbar--reader {
@@ -162,10 +172,10 @@ mark.annotation-mark {
   color: inherit;
 }
 
-.app-toolbar button,
-.app-toolbar a,
-.app-toolbar input,
-.app-toolbar select {
+.app-toolbar__inner button,
+.app-toolbar__inner a,
+.app-toolbar__inner input,
+.app-toolbar__inner select {
   -webkit-app-region: no-drag;
 }
 
@@ -217,12 +227,161 @@ mark.annotation-mark {
   cursor: not-allowed;
 }
 
+.app-toolbar__btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.app-toolbar__divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: rgba(120, 113, 108, 0.25);
+}
+
+.app-toolbar__btn--active {
+  color: #4f46e5;
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.home-page--dark .app-toolbar {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(28, 25, 23, 0.92) 0%, rgba(12, 10, 9, 0.88) 100%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+.home-page--dark .app-toolbar__title {
+  color: #e7e5e4;
+}
+
+.home-page--dark .app-toolbar__btn {
+  color: #d6d3d1;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.home-page--dark .app-toolbar__btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #fafaf9;
+}
+
+.home-page--dark .app-toolbar__btn--active {
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(129, 140, 248, 0.35);
+}
+
+.home-page--dark .app-toolbar__divider {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 .app-toolbar__btn--ghost {
   background: transparent;
 }
 
 .app-toolbar__btn--ghost:hover {
   background: rgba(0, 0, 0, 0.06);
+}
+
+.font-size-control {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.font-size-control__value {
+  min-width: 1.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.bg-picker {
+  position: relative;
+}
+
+.bg-picker__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.bg-picker__btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.bg-picker__swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(120, 113, 108, 0.25);
+}
+
+.bg-picker__swatch--sm {
+  width: 18px;
+  height: 18px;
+}
+
+.bg-picker__moon {
+  width: 10px;
+  height: 10px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.bg-picker__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 113, 108, 0.22);
+  background: linear-gradient(180deg, #fff 0%, #fafaf9 100%);
+  box-shadow: 0 4px 16px rgba(28, 25, 23, 0.12);
+}
+
+.bg-picker__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.bg-picker__option:hover {
+  transform: scale(1.08);
+}
+
+.bg-picker__option--active {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+}
+
+.app-toolbar--reader .bg-picker__btn:hover {
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .selection-toolbar {

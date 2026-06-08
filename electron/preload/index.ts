@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { Book, Annotation, AppSettings } from '../../src/types'
+import type { Book, BookProgress, Annotation, AppSettings } from '../../src/types'
 
 export interface ElectronAPI {
   platform: NodeJS.Platform
@@ -13,7 +13,11 @@ export interface ElectronAPI {
       errors: string[]
     }>
     remove: (bookIds: string[]) => Promise<Book[]>
-    updateProgress: (bookId: string, page: number) => Promise<Book | undefined>
+    updateProgress: (
+      bookId: string,
+      page: number,
+      progress?: BookProgress
+    ) => Promise<Book | undefined>
   }
   files: {
     readText: (filePath: string) => Promise<string>
@@ -56,7 +60,8 @@ const api: ElectronAPI = {
     list: () => ipcRenderer.invoke('books:list'),
     add: (filePaths) => ipcRenderer.invoke('books:add', filePaths),
     remove: (bookIds) => ipcRenderer.invoke('books:remove', bookIds),
-    updateProgress: (bookId, page) => ipcRenderer.invoke('books:updateProgress', bookId, page)
+    updateProgress: (bookId, page, progress) =>
+      ipcRenderer.invoke('books:updateProgress', bookId, page, progress)
   },
   files: {
     readText: (filePath) => ipcRenderer.invoke('files:readText', filePath),
