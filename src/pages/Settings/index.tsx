@@ -68,8 +68,13 @@ export function SettingsPage(): JSX.Element {
             <p className="mb-3 text-sm text-stone-500">
               若书籍含有「第×章」等章节标题，将按章节分页；否则按下方字数分页。
             </p>
-            <div className="flex items-center gap-4">
-              <span className="shrink-0 text-sm text-stone-600">每页字数</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-stone-600">每页字数</span>
+                <span className="text-sm text-stone-600 tabular-nums">
+                  {settings.charsPerPage} 字
+                </span>
+              </div>
               <input
                 type="range"
                 min={500}
@@ -77,11 +82,8 @@ export function SettingsPage(): JSX.Element {
                 step={100}
                 value={settings.charsPerPage}
                 onChange={(e) => updateSettings({ charsPerPage: Number(e.target.value) })}
-                className="flex-1"
+                className="w-full"
               />
-              <span className="w-16 text-right text-sm text-stone-600 tabular-nums">
-                {settings.charsPerPage} 字
-              </span>
             </div>
           </section>
 

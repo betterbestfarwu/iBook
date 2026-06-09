@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { getPagePreview } from '../../utils/annotations'
+import { titleHasChapterNumber } from '../../utils/chapters'
 import type { ReadMode } from '../../types'
 
 interface PageThumbnailNavProps {
@@ -102,7 +103,7 @@ export function PageThumbnailNav({
                 <div className="truncate px-0.5 font-medium" title={label}>
                   {label}
                 </div>
-                {isChapterMode && title ? (
+                {isChapterMode && title && !titleHasChapterNumber(title) ? (
                   <div style={{ opacity: 0.5 }}>第 {i + 1} 章</div>
                 ) : null}
               </div>

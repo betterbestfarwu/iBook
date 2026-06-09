@@ -68,7 +68,6 @@ function SettingsWithBack(): JSX.Element {
   return (
     <div className="flex h-full flex-col">
       <AppToolbar>
-        <span className="app-toolbar__title text-lg">设置</span>
         <button
           type="button"
           onClick={() => navigate('/')}
@@ -76,6 +75,7 @@ function SettingsWithBack(): JSX.Element {
         >
           ← 返回书架
         </button>
+        <span className="app-toolbar__title text-lg">设置</span>
       </AppToolbar>
       <div className="flex-1 overflow-hidden">
         <SettingsPage />

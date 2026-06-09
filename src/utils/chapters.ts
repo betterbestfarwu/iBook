@@ -4,6 +4,7 @@ export type { Chapter }
 
 const MAX_TITLE_LEN = 80
 const CN_NUM = `[\\d零一二两三四五六七八九十百千万壹贰叁肆伍陆柒捌玖拾佰仟]+`
+const CHAPTER_NUM_IN_TITLE = new RegExp(`第\\s*${CN_NUM}\\s*[章节回卷篇集部]`)
 
 // ###第三章 七玄门### — 优先级最高；全文存在此格式时忽略其他章节规则
 const HASH_CHAPTER_PATTERN = /^\s*#{3}\s*(.+?)\s*#{3}\s*$/
@@ -51,6 +52,11 @@ function normalizeTitle(line: string): string {
   const hash = trimmed.match(/^#{3}\s*(.+?)\s*#{3}$/)
   if (hash) return hash[1].trim()
   return trimmed
+}
+
+/** 标题本身已含「第×章」等章节序号时，无需再单独显示「第 N 章」 */
+export function titleHasChapterNumber(title: string): boolean {
+  return CHAPTER_NUM_IN_TITLE.test(title)
 }
 
 export function detectChapterTitle(line: string, patterns?: RegExp[]): string | null {
