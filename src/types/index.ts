@@ -53,6 +53,7 @@ export interface ThemePreset {
 export interface AppSettings {
   theme: ThemeKey
   fontSize: number
+  charsPerPage: number
   backgroundColor: string
   backgroundImage: string
   autoPageTurn: boolean
@@ -65,19 +66,38 @@ export interface BookContent {
   format: 'txt' | 'pdf'
 }
 
-export interface PaginateResult {
-  pages: string[]
-  totalPages: number
-}
-
 export interface Chapter {
   title: string
   charOffset: number
 }
 
+export interface BookContentLoadResult {
+  text: string
+  fileHash: string
+  chapters: Chapter[]
+  fromCache: boolean
+}
+
+export interface PaginateResult {
+  pages: string[]
+  totalPages: number
+}
+
+export interface PaginateCacheResult extends PaginateResult {
+  fromCache: boolean
+  isComplete: boolean
+}
+
+export interface ChapterPagesResult {
+  pages: string[]
+  titles: string[]
+  fromCache: boolean
+}
+
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'cream',
   fontSize: 18,
+  charsPerPage: 2000,
   backgroundColor: '#f5f0dc',
   backgroundImage: '',
   autoPageTurn: false,

@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import { deleteBookCache } from '../services/bookCache'
 import {
   readLibrary,
   writeLibrary,
@@ -42,9 +43,22 @@ export function registerBookHandlers(): void {
   })
 
   ipcMain.handle('books:remove', (_event, bookIds: string[]) => {
+    for (const bookId of bookIds) {
+      deleteBookCache(bookId)
+    }
     const library = readLibrary().filter((b) => !bookIds.includes(b.id))
     writeLibrary(library)
     return library
+  })
+
+  ipcMain.handle('books:updateFileHash', (_event, bookId: string, fileHash: string) => {
+    const library = readLibrary()
+    const book = library.find((b) => b.id === bookId)
+    if (book && book.fileHash !== fileHash) {
+      book.fileHash = fileHash
+      writeLibrary(library)
+    }
+    return book
   })
 
   ipcMain.handle(

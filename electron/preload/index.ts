@@ -1,5 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { Book, BookProgress, Annotation, AppSettings } from '../../src/types'
+import type {
+  Book,
+  BookProgress,
+  BookContentLoadResult,
+  ChapterPagesResult,
+  PaginateCacheResult,
+  Annotation,
+  AppSettings
+} from '../../src/types'
 
 export interface ElectronAPI {
   platform: NodeJS.Platform
@@ -18,28 +26,25 @@ export interface ElectronAPI {
       page: number,
       progress?: BookProgress
     ) => Promise<Book | undefined>
+    updateFileHash: (bookId: string, fileHash: string) => Promise<Book | undefined>
   }
   files: {
     readText: (filePath: string) => Promise<string>
-    readImageThumbnail: (filePath: string) => Promise<string | null>
-    paginate: (payload: {
-      text: string
-      containerWidth: number
-      containerHeight: number
-      fontSize: number
-      lineHeight: number
-      padding: number
+    loadBookContent: (payload: {
+      bookId: string
+      filePath: string
+    }) => Promise<BookContentLoadResult>
+    paginateBook: (payload: {
+      bookId: string
+      fileHash: string
+      charsPerPage: number
       upToPage?: number
-    }) => Promise<{ pages: string[]; totalPages: number }>
-    paginateRemaining: (payload: {
-      text: string
-      containerWidth: number
-      containerHeight: number
-      fontSize: number
-      lineHeight: number
-      padding: number
-      fromPage: number
-    }) => Promise<{ pages: string[]; totalPages: number }>
+    }) => Promise<PaginateCacheResult>
+    loadChapterPages: (payload: {
+      bookId: string
+      fileHash: string
+    }) => Promise<ChapterPagesResult>
+    readImageThumbnail: (filePath: string) => Promise<string | null>
   }
   annotations: {
     list: (bookId: string) => Promise<Annotation[]>
@@ -62,13 +67,16 @@ const api: ElectronAPI = {
     add: (filePaths) => ipcRenderer.invoke('books:add', filePaths),
     remove: (bookIds) => ipcRenderer.invoke('books:remove', bookIds),
     updateProgress: (bookId, page, progress) =>
-      ipcRenderer.invoke('books:updateProgress', bookId, page, progress)
+      ipcRenderer.invoke('books:updateProgress', bookId, page, progress),
+    updateFileHash: (bookId, fileHash) =>
+      ipcRenderer.invoke('books:updateFileHash', bookId, fileHash)
   },
   files: {
     readText: (filePath) => ipcRenderer.invoke('files:readText', filePath),
-    readImageThumbnail: (filePath) => ipcRenderer.invoke('files:readImageThumbnail', filePath),
-    paginate: (payload) => ipcRenderer.invoke('files:paginate', payload),
-    paginateRemaining: (payload) => ipcRenderer.invoke('files:paginateRemaining', payload)
+    loadBookContent: (payload) => ipcRenderer.invoke('files:loadBookContent', payload),
+    paginateBook: (payload) => ipcRenderer.invoke('files:paginateBook', payload),
+    loadChapterPages: (payload) => ipcRenderer.invoke('files:loadChapterPages', payload),
+    readImageThumbnail: (filePath) => ipcRenderer.invoke('files:readImageThumbnail', filePath)
   },
   annotations: {
     list: (bookId) => ipcRenderer.invoke('annotations:list', bookId),

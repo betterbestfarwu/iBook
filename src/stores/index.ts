@@ -10,6 +10,7 @@ interface BooksState {
   addBooks: (paths: string[]) => Promise<{ added: Book[]; duplicates: string[]; errors: string[] }>
   removeSelected: () => Promise<void>
   updateProgress: (bookId: string, page: number, progress?: BookProgress) => Promise<void>
+  syncFileHash: (bookId: string, fileHash: string) => Promise<void>
   toggleSelect: (id: string) => void
   clearSelection: () => void
 }
@@ -57,6 +58,13 @@ export const useBooksStore = create<BooksState>((set, get) => ({
             }
           : b
       )
+    })
+  },
+
+  syncFileHash: async (bookId, fileHash) => {
+    await window.electronAPI.books.updateFileHash(bookId, fileHash)
+    set({
+      books: get().books.map((b) => (b.id === bookId ? { ...b, fileHash } : b))
     })
   },
 

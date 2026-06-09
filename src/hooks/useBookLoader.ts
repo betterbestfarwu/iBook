@@ -1,16 +1,13 @@
 import { useCallback } from 'react'
 import { useBooksStore, useReaderStore, useSettingsStore } from '../stores'
 import type { Book } from '../types'
-import { hasRecognizedChapters, parseChapters, splitTextByChapters } from '../utils/chapters'
+import { hasRecognizedChapters } from '../utils/chapters'
 import { buildBookProgress } from '../utils/progress'
 
 const LINE_HEIGHT = 1.8
-const PADDING = 48
-const TOOLBAR_HEIGHT = 48
-const FOOTER_HEIGHT = 36
 
 export function useBookLoader() {
-  const settings = useSettingsStore((s) => s.settings)
+  const charsPerPage = useSettingsStore((s) => s.settings.charsPerPage)
   const {
     setBook,
     setText,
@@ -23,43 +20,44 @@ export function useBookLoader() {
     loadAnnotations
   } = useReaderStore()
 
-  const getLayout = useCallback(() => {
-    return {
-      containerWidth: Math.max(window.innerWidth, 400),
-      containerHeight: Math.max(window.innerHeight - TOOLBAR_HEIGHT - FOOTER_HEIGHT, 500),
-      fontSize: settings.fontSize,
-      lineHeight: LINE_HEIGHT,
-      padding: PADDING
-    }
-  }, [settings.fontSize])
-
   const loadBook = useCallback(
     async (book: Book) => {
       setBook(book)
-      setLoading(true, '正在读取文件…')
 
       if (book.format === 'pdf') {
         setLoading(false)
         throw new Error('PDF 格式即将支持，请先使用 TXT 文件')
       }
 
-      const text = await window.electronAPI.files.readText(book.filePath)
+      setLoading(true, '正在校验文件…')
+      const { text, fileHash, chapters, fromCache } =
+        await window.electronAPI.files.loadBookContent({
+          bookId: book.id,
+          filePath: book.filePath
+        })
       if (!text.trim()) {
         setLoading(false)
         throw new Error('TXT 文件为空或无法识别编码，请另存为 UTF-8 后重试')
       }
+      if (book.fileHash !== fileHash) {
+        void useBooksStore.getState().syncFileHash(book.id, fileHash)
+      }
       setText(text)
-
-      const chapters = parseChapters(text)
       setChapters(chapters)
+      if (fromCache) {
+        setLoading(true, '正在加载缓存…')
+      }
 
       const targetPage = book.lastReadPage ?? 0
       const useChapterMode = hasRecognizedChapters(chapters)
 
       if (useChapterMode) {
-        const { pages, titles } = splitTextByChapters(text, chapters)
-        setReadMode('chapter', titles)
         setLoading(true, targetPage > 0 ? `恢复至第 ${targetPage + 1} 章…` : '正在分章…')
+        const { pages, titles } = await window.electronAPI.files.loadChapterPages({
+          bookId: book.id,
+          fileHash
+        })
+        setReadMode('chapter', titles)
         setPages(pages, pages.length)
         const page = pages.length > 0 ? Math.min(targetPage, pages.length - 1) : 0
         setCurrentPage(page)
@@ -75,10 +73,10 @@ export function useBookLoader() {
       setReadMode('page', [])
       setLoading(true, targetPage > 0 ? `恢复至第 ${targetPage + 1} 页…` : '正在排版…')
 
-      const layout = getLayout()
-      const { pages, totalPages } = await window.electronAPI.files.paginate({
-        text,
-        ...layout,
+      const { pages, totalPages, isComplete } = await window.electronAPI.files.paginateBook({
+        bookId: book.id,
+        fileHash,
+        charsPerPage,
         upToPage: targetPage
       })
 
@@ -93,16 +91,18 @@ export function useBookLoader() {
 
       void loadAnnotations(book.id)
 
-      setBackgroundPaginating(true)
-      window.electronAPI.files
-        .paginate({ text, ...layout })
-        .then(({ pages: allPages, totalPages: fullTotal }) => {
-          useReaderStore.setState({ pages: allPages, totalPages: fullTotal })
-        })
-        .finally(() => setBackgroundPaginating(false))
+      if (!isComplete) {
+        setBackgroundPaginating(true)
+        window.electronAPI.files
+          .paginateBook({ bookId: book.id, fileHash, charsPerPage })
+          .then(({ pages: allPages, totalPages: fullTotal }) => {
+            useReaderStore.setState({ pages: allPages, totalPages: fullTotal })
+          })
+          .finally(() => setBackgroundPaginating(false))
+      }
     },
     [
-      getLayout,
+      charsPerPage,
       loadAnnotations,
       setBackgroundPaginating,
       setBook,
@@ -115,7 +115,7 @@ export function useBookLoader() {
     ]
   )
 
-  return { loadBook, getLayout }
+  return { loadBook }
 }
 
-export { LINE_HEIGHT, PADDING }
+export { LINE_HEIGHT }

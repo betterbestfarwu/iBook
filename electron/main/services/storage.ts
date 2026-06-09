@@ -1,16 +1,11 @@
-import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'fs'
 import { createHash } from 'crypto'
 import { v4 as uuidv4 } from 'uuid'
 import type { Book, Annotation, AppSettings } from '../../../src/types'
 import { DEFAULT_SETTINGS, normalizeThemeKey } from '../../../src/types'
-
-function getDataDir(): string {
-  const dir = join(app.getPath('userData'), 'iBook')
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  return dir
-}
+import { getDataDir } from './storagePaths'
+import { readFileBuffer } from './text'
 
 function getLibraryPath(): string {
   return join(getDataDir(), 'library.json')
@@ -31,8 +26,7 @@ function getAnnotationPath(bookId: string): string {
 }
 
 export function hashFile(filePath: string): string {
-  const buffer = readFileSync(filePath)
-  return createHash('md5').update(buffer).digest('hex')
+  return createHash('md5').update(readFileBuffer(filePath)).digest('hex')
 }
 
 export function readLibrary(): Book[] {
@@ -52,6 +46,7 @@ export function writeLibrary(books: Book[]): void {
 function normalizeSettings(raw: Partial<AppSettings>): AppSettings {
   const settings = { ...DEFAULT_SETTINGS, ...raw }
   settings.theme = normalizeThemeKey(settings.theme)
+  settings.charsPerPage = Math.min(10000, Math.max(200, settings.charsPerPage || DEFAULT_SETTINGS.charsPerPage))
   return settings
 }
 

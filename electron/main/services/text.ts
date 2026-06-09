@@ -14,7 +14,11 @@ function resolveEncoding(buffer: Buffer): string {
   return 'utf-8'
 }
 
-function decodeText(buffer: Buffer): string {
+export function readFileBuffer(filePath: string): Buffer {
+  return readFileSync(filePath)
+}
+
+export function decodeBuffer(buffer: Buffer): string {
   const encoding = resolveEncoding(buffer)
   try {
     const text = iconv.decode(buffer, encoding)
@@ -29,8 +33,7 @@ function decodeText(buffer: Buffer): string {
 }
 
 export function readTextFile(filePath: string): string {
-  const buffer = readFileSync(filePath)
-  return decodeText(buffer)
+  return decodeBuffer(readFileBuffer(filePath))
 }
 
 export function paginateText(
@@ -67,34 +70,3 @@ export function paginateText(
   return { pages, totalPages: estimatedTotal }
 }
 
-export function estimateCharsPerPage(
-  containerWidth: number,
-  containerHeight: number,
-  fontSize: number,
-  lineHeight: number,
-  padding: number
-): number {
-  const charWidth = fontSize * 0.55
-  const cols = Math.floor((containerWidth - padding * 2) / charWidth)
-  const rows = Math.floor((containerHeight - padding * 2) / (fontSize * lineHeight))
-  return Math.max(cols * rows, 200)
-}
-
-export function paginateByLayout(
-  text: string,
-  containerWidth: number,
-  containerHeight: number,
-  fontSize: number,
-  lineHeight: number,
-  padding: number,
-  upToPage?: number
-): { pages: string[]; totalPages: number } {
-  const charsPerPage = estimateCharsPerPage(
-    containerWidth,
-    containerHeight,
-    fontSize,
-    lineHeight,
-    padding
-  )
-  return paginateText(text, charsPerPage, upToPage)
-}

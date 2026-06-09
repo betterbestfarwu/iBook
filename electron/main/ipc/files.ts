@@ -1,10 +1,41 @@
 import { ipcMain, nativeImage } from 'electron'
-import { readTextFile, paginateByLayout } from '../services/text'
+import { loadBookContent, loadChapterPagesCached, paginateBookCached } from '../services/bookCache'
+import { readTextFile } from '../services/text'
 
 export function registerFileHandlers(): void {
   ipcMain.handle('files:readText', (_event, filePath: string) => {
     return readTextFile(filePath)
   })
+
+  ipcMain.handle(
+    'files:loadBookContent',
+    (_event, payload: { bookId: string; filePath: string }) => {
+      return loadBookContent(payload.bookId, payload.filePath)
+    }
+  )
+
+  ipcMain.handle(
+    'files:paginateBook',
+    (
+      _event,
+      payload: {
+        bookId: string
+        fileHash: string
+        charsPerPage: number
+        upToPage?: number
+      }
+    ) => {
+      const { bookId, fileHash, charsPerPage, upToPage } = payload
+      return paginateBookCached(bookId, fileHash, charsPerPage, upToPage)
+    }
+  )
+
+  ipcMain.handle(
+    'files:loadChapterPages',
+    (_event, payload: { bookId: string; fileHash: string }) => {
+      return loadChapterPagesCached(payload.bookId, payload.fileHash)
+    }
+  )
 
   ipcMain.handle('files:readImageThumbnail', (_event, filePath: string) => {
     const image = nativeImage.createFromPath(filePath)
@@ -22,59 +53,4 @@ export function registerFileHandlers(): void {
     return resized.toDataURL()
   })
 
-  ipcMain.handle(
-    'files:paginate',
-    (
-      _event,
-      payload: {
-        text: string
-        containerWidth: number
-        containerHeight: number
-        fontSize: number
-        lineHeight: number
-        padding: number
-        upToPage?: number
-      }
-    ) => {
-      const result = paginateByLayout(
-        payload.text,
-        payload.containerWidth,
-        payload.containerHeight,
-        payload.fontSize,
-        payload.lineHeight,
-        payload.padding,
-        payload.upToPage
-      )
-      return result
-    }
-  )
-
-  ipcMain.handle(
-    'files:paginateRemaining',
-    (
-      _event,
-      payload: {
-        text: string
-        containerWidth: number
-        containerHeight: number
-        fontSize: number
-        lineHeight: number
-        padding: number
-        fromPage: number
-      }
-    ) => {
-      const result = paginateByLayout(
-        payload.text,
-        payload.containerWidth,
-        payload.containerHeight,
-        payload.fontSize,
-        payload.lineHeight,
-        payload.padding
-      )
-      return {
-        pages: result.pages.slice(payload.fromPage),
-        totalPages: result.totalPages
-      }
-    }
-  )
 }
