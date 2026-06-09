@@ -82,7 +82,10 @@ export function PageThumbnailNav({
                 style={{
                   backgroundColor: theme.bg,
                   color: theme.text,
-                  borderColor: isActive ? undefined : `${theme.text}33`
+                  borderColor: isActive ? undefined : `${theme.text}33`,
+                  boxShadow: isActive
+                    ? `0 6px 16px ${theme.text}30, 0 2px 6px ${theme.text}18`
+                    : undefined
                 }}
               >
                 <div
