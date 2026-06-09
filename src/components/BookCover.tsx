@@ -55,7 +55,7 @@ export function BookCover({
             <span className="text-xs text-white/60">
               读到第 {displayUnit} {book.readMode === 'chapter' ? '章' : '页'}
               {unreadPercent !== null && (
-                <span className="ml-1.5 tabular-nums">{unreadPercent}%</span>
+                <span className="ml-1.5 tabular-nums">未读 {unreadPercent}%</span>
               )}
             </span>
           )}
